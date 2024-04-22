@@ -48,7 +48,10 @@ internal abstract record class ProgramMode(ProgramOptions Options) {
                     var flag = rawFlag.ToLowerInvariant().Replace("-", "");
                     // Do you hear it?
                     // The siren call of reflection?
-                    if (flag is "printtokens") {
+                    if (flag is "printall") {
+                        Options.PrintTokens = true;
+                        Options.PrintTree = true;
+                    } else if (flag is "printtokens") {
                         Options.PrintTokens = true;
                     } else if (flag is "printtree") {
                         Options.PrintTree = true;
