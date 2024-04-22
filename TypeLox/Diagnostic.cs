@@ -17,7 +17,7 @@ public record class Diagnostic(
     };
 
     public override string ToString() {
-        return $"{Kind.ToString().ToUpperInvariant()} at {Location}:\n{Message}";
+        return $"\x1b[31m{Kind.ToString().ToUpperInvariant()} at {Location}\x1b[39m:\n{Message}";
     }
 }
 

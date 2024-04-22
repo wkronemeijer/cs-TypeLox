@@ -2,7 +2,7 @@ namespace TypeLox;
 
 using System.Diagnostics;
 
-public readonly struct LoxValue {
+public readonly struct LoxValue : IDebug {
     public interface IVisitor<R> {
         R VisitNil();
         R Visit(bool value);
@@ -49,5 +49,10 @@ public readonly struct LoxValue {
         0.0 => false,
         "" => false,
         _ => true,
+    };
+
+    public string ToDebugString() => Value switch {
+        string s => $"\"{s}\"",
+        _ => ToString(),
     };
 }

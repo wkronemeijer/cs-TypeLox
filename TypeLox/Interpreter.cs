@@ -31,7 +31,7 @@ class Interpreter(ISourceRepository repository, ProgramOptions options) : IInter
 
             var root = new Parser(log, tokens).Parse();
             log.ThrowIfNotOk();
-            if (options.PrintTree) { Console.WriteLine(root.ToRepr()); }
+            if (options.PrintTree) { Console.WriteLine(root.ToDebugString()); }
         } catch (DiagnosticLog.NotOkException) {
             // ignore it
             // silly control flow

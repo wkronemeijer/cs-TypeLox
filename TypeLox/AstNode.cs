@@ -1,6 +1,6 @@
 namespace TypeLox;
 
-public abstract record class AstNode {
+public abstract partial record class AstNode {
     public interface IVisitor<R> {
         R Visit(Expr.Assign node);
         R Visit(Expr.Binary node);
@@ -25,51 +25,48 @@ public abstract record class AstNode {
         R Visit(Stmt.While node);
     }
 
-    // return visitor.Visit((dynamic)this);
-    // Also works, but we don't get any errors if we miss an implementation.
     public abstract R Accept<R>(IVisitor<R> visitor);
+    // return visitor.Visit((dynamic)this);
+    // AOT doesn't like that
 }
 
 public abstract record class Expr : AstNode {
-    // public abstract void Accept(IExprVisitor visitor);
-    // public abstract R Accept<R>(IExprVisitor<R> visitor);
-
     public record class Assign(Token Name, Expr Value) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Binary(Expr Left, Token Operator, Expr Right) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Call(Expr Callee, Token Paren, List<Expr> Arguments) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Get(Expr Target, Token Name) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     // CST needs this, but AST doesn't
     public record class Grouping(Expr Inner) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Literal(LoxValue Value) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Logical(Expr Left, Token Operator, Expr Right) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Set(Expr Target, Token Name, Expr Value) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Super(Token Keyword, Token Name) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class This(Token Keyword) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Unary(Token Operator, Expr Right) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Variable(Token Name) : Expr {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
 
     public static Literal FromToken(Token token) {
@@ -84,7 +81,7 @@ public abstract record class Expr : AstNode {
                 return new(LoxValue.FromDouble(double.Parse(token.Lexeme)));
             case TokenKind.STRING:
                 // slice off the "" at both ends
-                return new(LoxValue.FromString(token.Lexeme[1..^2]));
+                return new(LoxValue.FromString(token.Lexeme[1..^1]));
         }
         throw new ArgumentException($"{token.Kind} is not a literal token");
     }
@@ -92,31 +89,31 @@ public abstract record class Expr : AstNode {
 
 public abstract record class Stmt() : AstNode {
     public record class Block(List<Stmt> Stmts) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Class(Token Name, Expr.Variable? Superclass, List<Function> Methods) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Expression(Expr Expr) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Function(Token Name, List<Token> Parameters, Block Body) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class If(Expr Condition, Stmt IfTrue, Stmt IfFalse) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Print(Expr Expr) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Return(Expr Expr) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Var(Token Name, Expr Initializer) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class While(Expr Condition, Stmt Body) : Stmt {
-        public override R Accept<R>(IVisitor<R> visitor) { return visitor.Visit(this); }
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
 }
 
