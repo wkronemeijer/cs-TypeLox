@@ -17,6 +17,12 @@ public static class CollectionsExtensions {
             return self[key] = compute(key);
         }
     }
+
+    public static void AddNotNull<T>(this ICollection<T> self, T? item) {
+        if (item is not null) {
+            self.Add(item);
+        }
+    }
 }
 
 /// <summary>

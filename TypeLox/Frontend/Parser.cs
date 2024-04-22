@@ -267,7 +267,7 @@ public class Parser(IDiagnosticLog log, IList<Token> tokens) {
     Stmt.Block Block() {
         var statements = new List<Stmt>();
         while (!Check(RIGHT_BRACE) && !IsAtEnd) {
-            statements.Add(Statement());
+            statements.AddNotNull(DeclarationOrStatement());
         }
         Consume(RIGHT_BRACE, "'}' after block.");
         return new Stmt.Block(statements);
@@ -310,8 +310,9 @@ public class Parser(IDiagnosticLog log, IList<Token> tokens) {
 
     Stmt.Function FunctionDeclaration(FunctionKind kind) {
         Requires(kind is not FunctionKind.None);
-        var name = Consume(IDENTIFIER, $"{kind} name");
-        Consume(LEFT_PAREN, $"'(' after {kind} name");
+        var functionOrMethod = kind.ToString().ToLowerInvariant();
+        var name = Consume(IDENTIFIER, $"{functionOrMethod} name");
+        Consume(LEFT_PAREN, $"'(' after {functionOrMethod} name");
 
         var parameters = new List<Token>();
         // TODO: Allow trailing comma's
@@ -321,8 +322,9 @@ public class Parser(IDiagnosticLog log, IList<Token> tokens) {
             } while (Match(COMMA));
         }
         Consume(RIGHT_PAREN, "')' after parameters");
-        Consume(LEFT_BRACE, $"'{{' before {kind} body");
-        return new Stmt.Function(name, parameters, Block());
+        Consume(LEFT_BRACE, $"'{{' before {functionOrMethod} body");
+        var body = Block();
+        return new Stmt.Function(name, parameters, body);
     }
 
     Stmt.Class ClassDeclaration() {
@@ -365,8 +367,7 @@ public class Parser(IDiagnosticLog log, IList<Token> tokens) {
         var stmts = new List<Stmt>();
         try {
             while (!IsAtEnd) {
-                var item = DeclarationOrStatement();
-                if (item is not null) { stmts.Add(item); }
+                stmts.AddNotNull(DeclarationOrStatement());
             }
             Consume(EOF, "end of file");
         } catch (Recovery) {
