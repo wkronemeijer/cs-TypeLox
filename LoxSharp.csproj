@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>typelox</AssemblyName>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>TypeLox</RootNamespace>
+        <Nullable>enable</Nullable>
+        <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <!-- Very curious about this one: -->
+        <PublishAot>true</PublishAot>
+    </PropertyGroup>
+</Project>
