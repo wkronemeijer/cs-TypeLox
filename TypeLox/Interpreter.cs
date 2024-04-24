@@ -37,9 +37,9 @@ class Interpreter(ISourceRepository repository, ProgramOptions options) : IInter
             // silly control flow
             // should we use goto instead?
         } finally {
-            foreach (var diag in log) {
-                Console.WriteLine(diag.ToString());
-            }
+
+            Console.WriteLine(log.ToString());
+
         }
     }
 }

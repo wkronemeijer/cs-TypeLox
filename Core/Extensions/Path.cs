@@ -3,28 +3,6 @@ namespace Core;
 using System.IO;
 using System.Text.RegularExpressions;
 
-public static class BoolExtensions {
-    public static bool Implies(this bool a, bool b) {
-        return !a || b;
-    }
-}
-
-public static class CollectionsExtensions {
-    public static V ComputeIfAbsent<K, V>(this IDictionary<K, V> self, K key, Func<K, V> compute) {
-        if (self.TryGetValue(key, out var result)) {
-            return result;
-        } else {
-            return self[key] = compute(key);
-        }
-    }
-
-    public static void AddNotNull<T>(this ICollection<T> self, T? item) {
-        if (item is not null) {
-            self.Add(item);
-        }
-    }
-}
-
 /// <summary>
 /// Adds extensions equivalents to Node's <c>pathToFileUrl</c> and <c>fileUrlToPath</c>.
 /// </summary>

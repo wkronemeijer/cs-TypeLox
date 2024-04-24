@@ -1,26 +1,5 @@
 namespace TypeLox;
 
-public enum DiagnosticKind {
-    Info,
-    Warning,
-    Error,
-}
-
-public record class Diagnostic(
-    DiagnosticKind Kind,
-    SourceRange Location,
-    string Message
-) {
-    public bool IsOk { get; } = Kind switch {
-        DiagnosticKind.Error => false,
-        _ => true,
-    };
-
-    public override string ToString() {
-        return $"\x1b[31m{Kind.ToString().ToUpperInvariant()} at {Location}\x1b[39m:\n{Message}";
-    }
-}
-
 public interface IDiagnosticLog {
     /// <summary>
     /// Returns whether the log is OK, i.e. when it doesn't contain any errors.
@@ -60,7 +39,7 @@ public interface IDiagnosticLog {
     }
 }
 
-public class DiagnosticLog() : IDiagnosticLog, IEnumerable<Diagnostic> {
+public class DiagnosticLog() : IDiagnosticLog, IBuildable, IEnumerable<Diagnostic> {
     public class NotOkException(IDiagnosticLog log) : LoxException("log is not ok") {
         public IDiagnosticLog Log { get; } = log;
     }
@@ -81,4 +60,16 @@ public class DiagnosticLog() : IDiagnosticLog, IEnumerable<Diagnostic> {
 
     public IEnumerator<Diagnostic> GetEnumerator() => diagnostics.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => diagnostics.GetEnumerator();
+
+    public void Format(StringBuilder b) {
+        foreach (var diag in diagnostics) {
+            diag.Format(b);
+        }
+    }
+
+    public override string ToString() {
+        var result = new StringBuilder();
+        result.Include(this);
+        return result.ToString().Trim();
+    }
 }
