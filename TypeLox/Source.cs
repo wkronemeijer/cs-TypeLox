@@ -49,9 +49,8 @@ public class FileSystemSourceRepository : ISourceRepository {
         return new Source(uri, code);
     }
 
-    private int id;
     public Source CreateSourceFromSnippet(string code) {
-        var uri = new Uri($"lox:/snippet/{id++}");
+        var uri = new Uri($"lox:/snippet/{code.GetHashCode():x8}");
         return new Source(uri, code);
     }
 }
