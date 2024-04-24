@@ -3,7 +3,7 @@ namespace TypeLox;
 using static TokenKind;
 
 // TODO: C# uses WTF-16, make it work with 😂s
-public class Scanner(IDiagnosticLog log, Source source) {
+public class Scanner(Source source, IDiagnosticLog log) {
     private readonly string sourceText = source.Code;
 
     // TODO: Maybe reset?
@@ -178,7 +178,7 @@ public class Scanner(IDiagnosticLog log, Source source) {
                 } else if (IsAsciiAlpha(c)) {
                     return ContinueIdentifierOrKeyword();
                 } else {
-                    log.Error(CurrentLocation, $"unexpected character '{c}'");
+                    log.Error(CurrentLocation, $"unexpected character '{c}' (U+{(ushort)c:X4})");
                     return null;
                 }
             }
@@ -189,12 +189,7 @@ public class Scanner(IDiagnosticLog log, Source source) {
     // Fin //
     /////////
 
-    private bool done;
-
     public IList<Token> ScanAll() {
-        Requires(log.IsOk);
-        DoOnlyOnce(ref done);
-
         var tokens = new List<Token>();
         while (IsValid(current)) {
             var item = ScanToken();
@@ -204,7 +199,6 @@ public class Scanner(IDiagnosticLog log, Source source) {
             start = current;
         }
         tokens.Add(CreateToken(EOF));
-
         return tokens;
     }
 }

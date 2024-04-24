@@ -51,14 +51,14 @@ public abstract partial record class AstNode : IDebug {
         public Unit Visit(Expr.Call node) => Wrap("call", node.Callee, node.Arguments);
         public Unit Visit(Expr.Get node) => Wrap("get", node.Target, node.Name);
         public Unit Visit(Expr.Grouping node) => Wrap("group", node.Inner);
-        public Unit Visit(Expr.Literal node) => Wrap("literal", node.Value.ToDebugString());
+        public Unit Visit(Expr.Literal node) => Wrap("literal", node.Value.ToLoxDebugString());
         public Unit Visit(Expr.Logical node) => Wrap(node.Operator.Lexeme, node.Left, node.Right);
         public Unit Visit(Expr.Set node) => Wrap("set", node.Target, node.Name, node.Value);
         public Unit Visit(Expr.Super node) => Wrap("super", node.Name);
         public Unit Visit(Expr.This node) => Wrap("this");
         public Unit Visit(Expr.Unary node) => Wrap(node.Operator.Lexeme, node.Right);
         public Unit Visit(Expr.Variable node) => Wrap("var", node.Name);
-        public Unit Visit(Stmt.Block node) => Wrap("block", node.Stmts);
+        public Unit Visit(Stmt.Block node) => Wrap("block", node.Statements);
         public Unit Visit(Stmt.Class node) => Wrap("class", node.Name, node.Superclass, node.Methods);
         public Unit Visit(Stmt.Expression node) => Wrap("expr", node.Expr);
         public Unit Visit(Stmt.Function node) => Wrap("fun", node.Name, node.Parameters, node.Body);

@@ -1,21 +1,12 @@
 namespace TypeLox;
 
-public class LoxException : Exception {
-    public LoxException() { }
-    public LoxException(string? message) : base(message) { }
-    public LoxException(string? message, Exception? innerException) : base(message, innerException) { }
+public class LoxException(SourceRange location, string message) : Exception(message) {
+    public SourceRange Location { get; } = location;
 }
 
-// Annoying: (R)un(t)ime -vs- (C)ompile(T)ime
-// Maybe use comptime?
-public class LoxCompileException : LoxException {
-    public LoxCompileException() { }
-    public LoxCompileException(string? message) : base(message) { }
-    public LoxCompileException(string? message, Exception? innerException) : base(message, innerException) { }
+// ...but analysis has diagnostics? and almost always you can continue diagnosing
+public class LoxCompileException(Diagnostic diagnostic) : LoxException(diagnostic.Location, diagnostic.Message) {
+    public Diagnostic Diagnostic { get; } = diagnostic;
 }
 
-public class LoxRuntimeException : LoxException {
-    public LoxRuntimeException() { }
-    public LoxRuntimeException(string? message) : base(message) { }
-    public LoxRuntimeException(string? message, Exception? innerException) : base(message, innerException) { }
-}
+public class LoxRuntimeException(SourceRange location, string message) : LoxException(location, message);

@@ -1,31 +1,10 @@
 namespace TypeLox;
 
-using System.Diagnostics;
+// Unfortunately, `using LoxValue = object?` doesn't work
+// Wrapping it in a struct all the time didn't see like a good idea either.
 
-public readonly struct LoxValue : IDebug {
-    public interface IVisitor<R> {
-        R VisitNil();
-        R Visit(bool value);
-        R Visit(double value);
-        R Visit(string value);
-    }
-
-    public readonly object? Value { get; }
-    public LoxValue(object? value) {
-        if (!CanBeValue(value)) {
-            throw new Exception($"value of type {value?.GetType()} can not be a {nameof(LoxValue)}");
-        }
-        Value = value;
-    }
-
-    public static LoxValue Nil { get; } = new(null);
-    public static LoxValue True { get; } = new(true);
-    public static LoxValue False { get; } = new(false);
-
-    public static LoxValue FromDouble(double d) => new(d);
-    public static LoxValue FromString(string s) => new(s);
-
-    public static bool CanBeValue(object? value) => value switch {
+public static class LoxValueObjectExtensions {
+    public static bool CanBeLoxValue(this object? value) => value switch {
         null => true,
         bool => true,
         double => true,
@@ -33,26 +12,29 @@ public readonly struct LoxValue : IDebug {
         _ => false,
     };
 
-    public R Accept<R>(IVisitor<R> visitor) => Value switch {
-        null => visitor.VisitNil(),
-        bool b => visitor.Visit(b),
-        double d => visitor.Visit(d),
-        string s => visitor.Visit(s),
-        _ => throw new UnreachableException(),
-    };
-
-    public override string ToString() => Value?.ToString() ?? "nil";
-
-    public bool ToBool() => Value switch {
+    public static bool IsLoxTruthy(this object? value) => value switch {
         null => false,
         false => false,
-        0.0 => false,
-        "" => false,
         _ => true,
     };
 
-    public string ToDebugString() => Value switch {
+    public static string GetLoxTypeOf(this object? value) => value switch {
+        null => "nil",
+        bool => "boolean",
+        double => "number",
+        string => "string",
+        _ => throw new ArgumentException($"{value} is not a valid Lox value"),
+    };
+
+    public static string ToLoxString(this object? value) => value switch {
+        null => "nil",
+        bool b => b.ToString(),
+        double d => d.ToString(),
+        _ => value.ToString() ?? "<err>",
+    };
+
+    public static string ToLoxDebugString(this object? value) => value switch {
         string s => $"\"{s}\"",
-        _ => ToString(),
+        _ => value.ToLoxString(),
     };
 }

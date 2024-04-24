@@ -26,8 +26,6 @@ public abstract partial record class AstNode {
     }
 
     public abstract R Accept<R>(IVisitor<R> visitor);
-    // return visitor.Visit((dynamic)this);
-    // AOT doesn't like that
 }
 
 public abstract record class Expr : AstNode {
@@ -47,7 +45,7 @@ public abstract record class Expr : AstNode {
     public record class Grouping(Expr Inner) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Literal(LoxValue Value) : Expr {
+    public record class Literal(object? Value) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Logical(Expr Left, Token Operator, Expr Right) : Expr {
@@ -72,23 +70,23 @@ public abstract record class Expr : AstNode {
     public static Literal FromToken(Token token) {
         switch (token.Kind) {
             case TokenKind.NIL:
-                return new(LoxValue.Nil);
+                return new(null);
             case TokenKind.FALSE:
-                return new(LoxValue.False);
+                return new(false);
             case TokenKind.TRUE:
-                return new(LoxValue.True);
+                return new(true);
             case TokenKind.NUMBER:
-                return new(LoxValue.FromDouble(double.Parse(token.Lexeme)));
+                return new(double.Parse(token.Lexeme));
             case TokenKind.STRING:
                 // slice off the "" at both ends
-                return new(LoxValue.FromString(token.Lexeme[1..^1]));
+                return new(token.Lexeme[1..^1]);
         }
         throw new ArgumentException($"{token.Kind} is not a literal token");
     }
 }
 
 public abstract record class Stmt() : AstNode {
-    public record class Block(List<Stmt> Stmts) : Stmt {
+    public record class Block(List<Stmt> Statements) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Class(Token Name, Expr.Variable? Superclass, List<Function> Methods) : Stmt {
@@ -109,7 +107,7 @@ public abstract record class Stmt() : AstNode {
     public record class Return(Expr Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Var(Token Name, Expr Initializer) : Stmt {
+    public record class Var(Token Name, Expr? Initializer) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class While(Expr Condition, Stmt Body) : Stmt {

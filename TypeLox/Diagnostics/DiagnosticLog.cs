@@ -9,6 +9,7 @@ public interface IDiagnosticLog {
     /// <summary>
     /// Throws if the log is not OK, i.e. when it contains any errors.
     /// </summary>
+    /// <exception cref="LoxCompileException"/>
     void ThrowIfNotOk();
 
     /// <summary>
@@ -40,17 +41,22 @@ public interface IDiagnosticLog {
 }
 
 public class DiagnosticLog() : IDiagnosticLog, IBuildable, IEnumerable<Diagnostic> {
-    public class NotOkException(IDiagnosticLog log) : LoxException("log is not ok") {
-        public IDiagnosticLog Log { get; } = log;
-    }
-
     private readonly List<Diagnostic> diagnostics = [];
 
-    public bool IsOk => diagnostics.All(i => i.IsOk);
+    private Diagnostic? FindFirstError() {
+        foreach (var diag in diagnostics) {
+            if (!diag.IsOk) {
+                return diag;
+            }
+        }
+        return null;
+    }
+
+    public bool IsOk => FindFirstError() is null;
 
     public void ThrowIfNotOk() {
-        if (!IsOk) {
-            throw new NotOkException(this);
+        if (FindFirstError() is Diagnostic d) {
+            throw new LoxCompileException(d);
         }
     }
 
@@ -64,10 +70,11 @@ public class DiagnosticLog() : IDiagnosticLog, IBuildable, IEnumerable<Diagnosti
     public void Format(StringBuilder b) {
         foreach (var diag in diagnostics) {
             diag.Format(b);
+            b.AppendLine();
         }
     }
 
-    public override string ToString() {
+    public string CreateReport() {
         var result = new StringBuilder();
         result.Include(this);
         return result.ToString().Trim();

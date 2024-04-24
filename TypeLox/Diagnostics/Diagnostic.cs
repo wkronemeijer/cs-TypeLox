@@ -17,9 +17,9 @@ public static class DiagnosticKindMethods {
     };
 
     public static AnsiSgrPair GetColor(this DiagnosticKind self) => self switch {
-        Info => AnsiSgrPair.BlueLetter,
+        Info => AnsiSgrPair.BrightBlueLetter,
         Warning => AnsiSgrPair.BrightYellowLetter,
-        Error => AnsiSgrPair.RedLetter,
+        Error => AnsiSgrPair.BrightRedLetter,
         _ => throw new UnreachableException(),
     };
 }
@@ -38,9 +38,11 @@ public record class Diagnostic(
             b.Append(' ');
         });
         b.Append('\uE0B0');
-        b.Append(" at ");
+        b.Append(' ');
+        // b.Append(" at ");
         b.Append(Location.ToString());
-        b.Append(": ");
+        b.Append(':');
+        b.Append(' ');
         b.AppendLine();
         b.Append(Message);
     });

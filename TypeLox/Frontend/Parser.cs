@@ -16,7 +16,7 @@ public enum ClassKind {
 }
 
 // TODO: Try out a Pratt Parser
-public class Parser(IDiagnosticLog log, IList<Token> tokens) {
+public class Parser(IList<Token> tokens, IDiagnosticLog log) {
     private int current = 0;
 
     ///////////////
@@ -297,13 +297,7 @@ public class Parser(IDiagnosticLog log, IList<Token> tokens) {
 
     Stmt.Var VariableDeclaration() {
         var name = Consume(IDENTIFIER, "variable name");
-        Expr init;
-        if (Match(EQUAL)) {
-            init = Expression();
-        } else {
-            // CST would keep track if initializer was present or not
-            init = new Expr.Literal(LoxValue.Nil);
-        }
+        var init = Match(EQUAL) ? Expression() : null;
         Consume(SEMICOLON, "';' after variable declaration");
         return new Stmt.Var(name, init);
     }
@@ -363,7 +357,6 @@ public class Parser(IDiagnosticLog log, IList<Token> tokens) {
     }
 
     public Stmt.Block Parse() {
-        Requires(log.IsOk);
         var stmts = new List<Stmt>();
         try {
             while (!IsAtEnd) {
