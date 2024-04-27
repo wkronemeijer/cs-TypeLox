@@ -46,6 +46,8 @@ public record class Diagnostic(
         b.AppendLine();
         b.Append(Message);
     });
+
+    public override string ToString() => this.FormatToString();
 }
 
 public class DiagnosticFormatter {

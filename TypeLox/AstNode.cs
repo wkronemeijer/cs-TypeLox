@@ -1,15 +1,15 @@
 namespace TypeLox;
 
-public abstract partial record class AstNode {
+public abstract record class AstNode {
     public interface IVisitor<R> {
         R Visit(Expr.Assign node);
         R Visit(Expr.Binary node);
         R Visit(Expr.Call node);
-        R Visit(Expr.Get node);
+        R Visit(Expr.GetProperty node);
         R Visit(Expr.Grouping node);
         R Visit(Expr.Literal node);
         R Visit(Expr.Logical node);
-        R Visit(Expr.Set node);
+        R Visit(Expr.SetProperty node);
         R Visit(Expr.Super node);
         R Visit(Expr.This node);
         R Visit(Expr.Unary node);
@@ -38,7 +38,7 @@ public abstract record class Expr : AstNode {
     public record class Call(Expr Callee, Token Paren, List<Expr> Arguments) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Get(Expr Target, Token Name) : Expr {
+    public record class GetProperty(Expr Target, Token Name) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     // CST needs this, but AST doesn't
@@ -51,7 +51,7 @@ public abstract record class Expr : AstNode {
     public record class Logical(Expr Left, Token Operator, Expr Right) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Set(Expr Target, Token Name, Expr Value) : Expr {
+    public record class SetProperty(Expr Target, Token Name, Expr Value) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Super(Token Keyword, Token Name) : Expr {

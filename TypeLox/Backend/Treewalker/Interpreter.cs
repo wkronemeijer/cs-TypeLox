@@ -28,23 +28,34 @@ interface IInterpreter {
     }
 }
 
-class Interpreter(
-    ICompilerHost host,
-    ProgramOptions options
-) : IInterpreter, AstNode.IVisitor<object?> {
-    public ICompilerHost Host => host;
+class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
+    public ICompilerHost Host { get; }
+
+    private readonly ProgramOptions options;
+    private readonly Env globalEnvironment = new();
+    private Env currentEnvironment;
+
+    public Interpreter(ICompilerHost host, ProgramOptions programOptions) {
+        Host = host;
+        options = programOptions;
+        currentEnvironment = globalEnvironment;
+    }
 
     // TODO: Split out a compiler class? The front is going to be re-used for different backends
     // ProgrammableCompilingPipeline
-    public Stmt.Block Compile(Source source, IDiagnosticLog log) {
+    public List<Stmt> Compile(Source source, IDiagnosticLog log) {
         // Should we use `out DiagnosticLog log`?
         var tokens = new Scanner(source, log).ScanAll();
         var root = new Parser(tokens, log).Parse();
         if (options.PrintTokens) {
-            host.WriteLine(tokens.ToDebugString());
+            Host.WriteLine($"Start of tokens".Bold());
+            Host.WriteLine(tokens.ToDebugString());
+            Host.WriteLine($"End of tokens".Bold());
         }
         if (options.PrintTree) {
-            host.WriteLine(root.ToDebugString());
+            Host.WriteLine($"Start of tree".Bold());
+            Host.WriteLine(root.ToDebugString());
+            Host.WriteLine($"End of tree".Bold());
         }
         // TODO: Should we return null?
         // Empty block stmt is valid, but suprising perhaps
@@ -59,14 +70,13 @@ class Interpreter(
         var root = Compile(source, log);
 
         if (!log.IsOk) {
-            host.WriteLine(log.CreateReport());
+            Host.WriteLine(log.CreateReport());
             return;
         }
-
         try {
-            root.Accept(this);
+            ExecuteBlock(root, currentEnvironment);
         } catch (LoxRuntimeException e) {
-            host.WriteLine(e.ToString());
+            Host.WriteLine(e.ToString());
         }
     }
 
@@ -74,8 +84,20 @@ class Interpreter(
     // Interpreting //
     //////////////////
 
-    public object? Evaluate(Expr expr) => expr.Accept(this);
+    public object? Evaluate(Expr expr) => expr?.Accept(this);
     public void Execute(Stmt stmt) => stmt.Accept(this);
+
+    public void ExecuteBlock(IList<Stmt> stmts, Env environment) {
+        var oldEnvironment = currentEnvironment;
+        try {
+            currentEnvironment = environment;
+            foreach (var stmt in stmts) {
+                Execute(stmt);
+            }
+        } finally {
+            currentEnvironment = oldEnvironment;
+        }
+    }
 
     public static bool IsTruthy(object? value) => value.IsLoxTruthy();
     public static string Stringify(object? value) => value.ToLoxString();
@@ -85,7 +107,8 @@ class Interpreter(
     /////////////////
 
     public object? Visit(Expr.Assign node) {
-        throw new NotImplementedException();
+        currentEnvironment.Assign(node.Name, Evaluate(node.Value));
+        return null;
     }
 
     public object? Visit(Expr.Binary node) {
@@ -102,19 +125,27 @@ class Interpreter(
                 return l * r;
             case SLASH when left is double l && right is double r:
                 return l / r;
+
+            case LESS when left is double l && right is double r:
+                return l < r;
+            case LESS_EQUAL when left is double l && right is double r:
+                return l <= r;
+            case GREATER when left is double l && right is double r:
+                return l > r;
+            case GREATER_EQUAL when left is double l && right is double r:
+                return l >= r;
             // String
             case PLUS when left is string l && right is string r:
                 return l + r;
         }
-
-        throw new LoxRuntimeException(node.Operator.Location, "invalid operand");
+        throw new LoxRuntimeException(node.Operator.Location, $"invalid operands for {node.Operator.Lexeme}");
     }
 
     public object? Visit(Expr.Call node) {
         throw new NotImplementedException();
     }
 
-    public object? Visit(Expr.Get node) {
+    public object? Visit(Expr.GetProperty node) {
         throw new NotImplementedException();
     }
 
@@ -126,7 +157,7 @@ class Interpreter(
         throw new NotImplementedException();
     }
 
-    public object? Visit(Expr.Set node) {
+    public object? Visit(Expr.SetProperty node) {
         throw new NotImplementedException();
     }
 
@@ -149,18 +180,14 @@ class Interpreter(
         throw new LoxRuntimeException(node.Operator.Location, "invalid operand");
     }
 
-    public object? Visit(Expr.Variable node) {
-        throw new NotImplementedException();
-    }
+    public object? Visit(Expr.Variable node) => currentEnvironment.Get(node.Name);
 
     ////////////////
     // Statements //
     ////////////////
 
     public object? Visit(Stmt.Block node) {
-        foreach (var stmt in node.Statements) {
-            Execute(stmt);
-        }
+        ExecuteBlock(node.Statements, new Env(currentEnvironment));
         return null;
     }
 
@@ -178,8 +205,7 @@ class Interpreter(
     }
 
     public object? Visit(Stmt.If node) {
-        var condition = Evaluate(node.Condition);
-        if (condition.IsLoxTruthy()) {
+        if (Evaluate(node.Condition).IsLoxTruthy()) {
             Execute(node.IfTrue);
         } else if (node.IfFalse is Stmt ifFalse) {
             Execute(ifFalse);
@@ -189,7 +215,7 @@ class Interpreter(
 
     public object? Visit(Stmt.Print node) {
         var value = Evaluate(node.Expr);
-        host.WriteLine(Stringify(value));
+        Host.WriteLine(Stringify(value));
         return null;
     }
 
@@ -202,10 +228,18 @@ class Interpreter(
     }
 
     public object? Visit(Stmt.Var node) {
-        throw new NotImplementedException();
+        object? value = null;
+        if (node.Initializer is not null) {
+            value = Evaluate(node.Initializer);
+        }
+        currentEnvironment.Define(node.Name, value);
+        return null;
     }
 
     public object? Visit(Stmt.While node) {
-        throw new NotImplementedException();
+        while (Evaluate(node.Condition).IsLoxTruthy()) {
+            Execute(node.Body);
+        }
+        return null;
     }
 }

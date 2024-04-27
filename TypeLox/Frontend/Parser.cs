@@ -117,8 +117,8 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
 
             if (lhs is Expr.Variable variable) {
                 return new Expr.Assign(variable.Name, rhs);
-            } else if (lhs is Expr.Get get) {
-                return new Expr.Set(get.Target, get.Name, rhs);
+            } else if (lhs is Expr.GetProperty get) {
+                return new Expr.SetProperty(get.Target, get.Name, rhs);
             } else {
                 Error("invalid assignment target", op.Location);
             }
@@ -215,7 +215,7 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
                 expr = FinishCallExpr(expr);
             } else if (Match(DOT)) {
                 var name = Consume(IDENTIFIER, "property name");
-                expr = new Expr.Get(expr, name);
+                expr = new Expr.GetProperty(expr, name);
             } else {
                 break;
             }
@@ -448,16 +448,16 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         }
     }
 
-    public Stmt.Block Parse() {
-        var stmts = new List<Stmt>();
+    public List<Stmt> Parse() {
+        var statements = new List<Stmt>();
         try {
             while (!IsAtEnd) {
-                stmts.AddNotNull(DeclarationOrStatement());
+                statements.AddNotNull(DeclarationOrStatement());
             }
             Consume(EOF, "end of file");
         } catch (Recovery) {
             // To ensure Recovery doesn't leave this file
         }
-        return new Stmt.Block(stmts);
+        return statements;
     }
 }

@@ -136,3 +136,16 @@ public sealed record class AnsiSgrPair(
     public static readonly AnsiSgrPair BrightCyanBackground = new(SetBrightCyanBackground, ResetBackground);
     public static readonly AnsiSgrPair BrightWhiteBackground = new(SetBrightWhiteBackground, ResetBackground);
 }
+
+public static class AnsiShortcuts {
+    private static string Wrap(this string self, AnsiSgrPair pair) {
+        var result = new StringBuilder();
+        var (start, end) = pair;
+        start.Format(result);
+        result.Append(self);
+        end.Format(result);
+        return result.ToString();
+    }
+
+    public static string Bold(this string self) => self.Wrap(AnsiSgrPair.Bold);
+}
