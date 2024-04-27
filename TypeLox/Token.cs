@@ -54,9 +54,14 @@ public enum TokenKind {
 }
 
 public static class TokenKindMethods {
-    //                            = BIG
-    static TokenKind firstKeyword = IF;
-    static TokenKind lastKeyword = TRUE;
+    //                                            = BIG
+    private static readonly TokenKind firstKeyword = IF;
+    private static readonly TokenKind lastKeyword = TRUE;
+
+    // Name is open for improvements
+    public static int GetMaximumTokenKindLength() =>
+        Enum.GetValues<TokenKind>().Max(k => k.ToString().Length)
+    ;
 
     public static bool GetIsKeyword(this TokenKind self) =>
         (int)firstKeyword <= (int)self &&
@@ -64,14 +69,12 @@ public static class TokenKindMethods {
     ;
 }
 
-public record class Token(
-    TokenKind Kind,
-    SourceRange Location
-) {
-    // RE: Why make this lazy?
-    // Identifiers, numbers and strings are evaluated like this
-    // But most literal tokens like !, + and the like are not
-    // Maybe we should check some data
+public sealed class Token(TokenKind kind, SourceRange location) {
+    public TokenKind Kind => kind;
+    public SourceRange Location => location;
+
+    // Lazy because most tokens don't need their lexeme
+    // TODO: Collect some performance data on this
     private string? lexeme;
     public string Lexeme => lexeme ??= Location.GetLexeme();
 
@@ -87,7 +90,21 @@ public record class Token(
         _ => throw new ArgumentException($"{Kind} is not a literal token"),
     };
 
+    private static readonly int maxLength = TokenKindMethods.GetMaximumTokenKindLength();
+
     public override string ToString() {
-        return $"{Kind,-15} [{Location.Start,4}..<{Location.End,4}] |{Lexeme}|";
+        return $"{Kind.ToString().PadRight(maxLength)} [{Location.Start,4}..<{Location.End,4}] |{Lexeme}|";
+    }
+}
+
+// Rather than a full TokenList class (which wouldn't do enough)
+// We extend IEnumerable with DebugString
+public static class TokenListMethods {
+    public static string ToDebugString(this IEnumerable<Token> tokens) {
+        var result = new StringBuilder();
+        foreach (var token in tokens) {
+            result.AppendLine(token.ToString());
+        }
+        return result.ToString().Trim();
     }
 }

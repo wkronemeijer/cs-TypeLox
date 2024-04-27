@@ -3,39 +3,53 @@ namespace TypeLox.Backend.Treewalker;
 using static TokenKind;
 
 interface IInterpreter {
-    ICompilerHost Host { get; } // needed to resolve `require` calls
+    /// <summary>
+    /// Host environment, which provides file system and output abstraction.
+    /// </summary>
+    ICompilerHost Host { get; }
+
+    /// <summary>
+    /// Runs a piece of source code.
+    /// </summary>
     void Run(Source source);
 
+    /// <summary>
+    /// Runs a source file.
+    /// </summary>
     void RunFile(Uri uri) {
         Run(Host.CreateSourceFromFile(uri));
     }
 
+    /// <summary>
+    /// Runs an indepedent snippet of code.
+    /// </summary>
     void RunSnippet(string snippet) {
         Run(Host.CreateSourceFromSnippet(snippet));
     }
 }
 
-class Interpreter(ICompilerHost host, ProgramOptions options) : IInterpreter, AstNode.IVisitor<object?> {
+class Interpreter(
+    ICompilerHost host,
+    ProgramOptions options
+) : IInterpreter, AstNode.IVisitor<object?> {
     public ICompilerHost Host => host;
 
     // TODO: Split out a compiler class? The front is going to be re-used for different backends
     // ProgrammableCompilingPipeline
     public Stmt.Block Compile(Source source, IDiagnosticLog log) {
+        // Should we use `out DiagnosticLog log`?
         var tokens = new Scanner(source, log).ScanAll();
         var root = new Parser(tokens, log).Parse();
-
         if (options.PrintTokens) {
-            foreach (var token in tokens) {
-                host.WriteLine(token.ToString());
-            }
+            host.WriteLine(tokens.ToDebugString());
         }
         if (options.PrintTree) {
             host.WriteLine(root.ToDebugString());
         }
-
         // TODO: Should we return null?
         // Empty block stmt is valid, but suprising perhaps
         // Alternative logic can get out of sync, however
+        // Return a CST with a comment saying "compile went awry"
         return root;
     }
 

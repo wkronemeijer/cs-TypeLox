@@ -193,9 +193,7 @@ public class Scanner(Source source, IDiagnosticLog log) {
         var tokens = new List<Token>();
         while (IsValid(current)) {
             var item = ScanToken();
-            if (item is not null) {
-                tokens.Add(item);
-            }
+            tokens.AddNotNull(item);
             start = current;
         }
         tokens.Add(CreateToken(EOF));

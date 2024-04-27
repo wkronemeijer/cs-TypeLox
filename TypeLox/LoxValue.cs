@@ -30,6 +30,7 @@ public static class LoxValueObjectExtensions {
         null => "nil",
         bool b => b.ToString(),
         double d => d.ToString(),
+        string s => s,
         _ => value.ToString() ?? "<err>",
     };
 
