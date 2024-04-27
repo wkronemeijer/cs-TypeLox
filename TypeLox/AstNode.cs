@@ -68,20 +68,7 @@ public abstract record class Expr : AstNode {
     }
 
     public static Literal FromToken(Token token) {
-        switch (token.Kind) {
-            case TokenKind.NIL:
-                return new(null);
-            case TokenKind.FALSE:
-                return new(false);
-            case TokenKind.TRUE:
-                return new(true);
-            case TokenKind.NUMBER:
-                return new(double.Parse(token.Lexeme));
-            case TokenKind.STRING:
-                // slice off the "" at both ends
-                return new(token.Lexeme[1..^1]);
-        }
-        throw new ArgumentException($"{token.Kind} is not a literal token");
+        return new(token.GetNativeValue());
     }
 }
 
@@ -104,7 +91,7 @@ public abstract record class Stmt() : AstNode {
     public record class Print(Expr Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Return(Expr Expr) : Stmt {
+    public record class Return(Expr? Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Var(Token Name, Expr? Initializer) : Stmt {

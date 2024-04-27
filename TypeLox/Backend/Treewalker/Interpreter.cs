@@ -1,4 +1,4 @@
-namespace TypeLox;
+namespace TypeLox.Backend.Treewalker;
 
 using static TokenKind;
 
@@ -164,7 +164,13 @@ class Interpreter(ICompilerHost host, ProgramOptions options) : IInterpreter, As
     }
 
     public object? Visit(Stmt.If node) {
-        throw new NotImplementedException();
+        var condition = Evaluate(node.Condition);
+        if (condition.IsLoxTruthy()) {
+            Execute(node.IfTrue);
+        } else {
+            Execute(node.IfFalse);
+        }
+        return null;
     }
 
     public object? Visit(Stmt.Print node) {
@@ -174,7 +180,11 @@ class Interpreter(ICompilerHost host, ProgramOptions options) : IInterpreter, As
     }
 
     public object? Visit(Stmt.Return node) {
-        throw new NotImplementedException();
+        object? value = null;
+        if (node.Expr is not null) {
+            value = Evaluate(node.Expr);
+        }
+        throw new Return(value);
     }
 
     public object? Visit(Stmt.Var node) {

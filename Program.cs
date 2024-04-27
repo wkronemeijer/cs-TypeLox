@@ -1,4 +1,5 @@
 ﻿using TypeLox;
+using TypeLox.Backend.Treewalker;
 
 class Program(IInterpreter interpreter) : ProgramMode.IVisitor {
     void ProgramMode.IVisitor.Visit(ProgramMode.Repl command) {

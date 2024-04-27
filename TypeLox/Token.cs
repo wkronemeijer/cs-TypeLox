@@ -1,4 +1,5 @@
 namespace TypeLox;
+
 using static TypeLox.TokenKind;
 
 public enum TokenKind {
@@ -75,6 +76,16 @@ public record class Token(
     public string Lexeme => lexeme ??= Location.GetLexeme();
 
     internal bool IsExpanded => lexeme is not null;
+
+    // Maybe have the scanner put the value in here?
+    public object? GetNativeValue() => Kind switch {
+        NIL => null,
+        FALSE => false,
+        TRUE => true,
+        NUMBER => double.Parse(Lexeme),
+        STRING => Lexeme[1..^1],// slice off the "" at both ends
+        _ => throw new ArgumentException($"{Kind} is not a literal token"),
+    };
 
     public override string ToString() {
         return $"{Kind,-15} [{Location.Start,4}..<{Location.End,4}] |{Lexeme}|";
