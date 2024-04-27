@@ -28,7 +28,7 @@ public static class LoxValueObjectExtensions {
 
     public static string ToLoxString(this object? value) => value switch {
         null => "nil",
-        bool b => b.ToString(),
+        bool b => b ? "true" : "false",
         double d => d.ToString(),
         string s => s,
         _ => value.ToString() ?? "<err>",

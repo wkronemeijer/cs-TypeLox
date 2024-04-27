@@ -40,7 +40,7 @@ public interface IDiagnosticLog {
     }
 }
 
-public class DiagnosticLog() : IDiagnosticLog, IBuildable, IEnumerable<Diagnostic> {
+public class DiagnosticLog() : IDiagnosticLog, IDisplay, IEnumerable<Diagnostic> {
     private readonly List<Diagnostic> diagnostics = [];
 
     private Diagnostic? FindFirstError() {
@@ -67,16 +67,12 @@ public class DiagnosticLog() : IDiagnosticLog, IBuildable, IEnumerable<Diagnosti
     public IEnumerator<Diagnostic> GetEnumerator() => diagnostics.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => diagnostics.GetEnumerator();
 
-    public void Format(StringBuilder b) {
+    public void Format(IFormatter b) {
         foreach (var diag in diagnostics) {
             diag.Format(b);
             b.AppendLine();
         }
     }
 
-    public string CreateReport() {
-        var result = new StringBuilder();
-        result.Include(this);
-        return result.ToString().Trim();
-    }
+    public string CreateReport() => this.FormatToString().Trim();
 }

@@ -48,14 +48,14 @@ class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         var tokens = new Scanner(source, log).ScanAll();
         var root = new Parser(tokens, log).Parse();
         if (options.PrintTokens) {
-            Host.WriteLine($"Start of tokens".Bold());
+            Host.WriteLine($"Start of tokens".Header());
             Host.WriteLine(tokens.ToDebugString());
-            Host.WriteLine($"End of tokens".Bold());
+            Host.WriteLine($"End of tokens".Header());
         }
         if (options.PrintTree) {
-            Host.WriteLine($"Start of tree".Bold());
+            Host.WriteLine($"Start of tree".Header());
             Host.WriteLine(root.ToDebugString());
-            Host.WriteLine($"End of tree".Bold());
+            Host.WriteLine($"End of tree".Header());
         }
         // TODO: Should we return null?
         // Empty block stmt is valid, but suprising perhaps

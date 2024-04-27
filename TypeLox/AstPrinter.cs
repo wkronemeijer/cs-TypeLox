@@ -1,16 +1,14 @@
 namespace TypeLox;
 
 public static class AstNodePrinter {
-    private class Visitor(NestedStringBuilder builder) : AstNode.IVisitor<Unit> {
+    private class Visitor(IFormatter f) : AstNode.IVisitor<Unit> {
         private void Handle(object? o) {
             if (o is null) {
-                builder.Append("null");
+                f.Append("null");
             } else if (o is string s) {
-                builder.Append(s);
+                f.Append(s);
             } else if (o is Token token) {
-                builder.Append('|');
-                builder.Append(token.Lexeme);
-                builder.Append('|');
+                token.FormatLexeme(f);
             } else if (o is AstNode node) {
                 node.Accept(this);
             } else if (o is IList list) {
@@ -21,26 +19,26 @@ public static class AstNodePrinter {
         }
 
         private Unit WrapArray(object?[] objects) {
-            builder.Append('[');
-            builder.Indent();
-            builder.AppendLine();
+            f.Append('[');
+            f.Indent();
+            f.AppendLine();
             foreach (var o in objects) {
                 Handle(o);
-                builder.AppendLine();
+                f.AppendLine();
             }
-            builder.Dedent();
-            builder.Append(']');
+            f.Dedent();
+            f.Append(']');
             return unit;
         }
 
         private Unit Wrap(string name, params object?[] objects) {
-            builder.Append('(');
-            builder.Append(name);
+            f.Append('(');
+            f.Append(name);
             foreach (var o in objects) {
-                builder.Append(' ');
+                f.Append(' ');
                 Handle(o);
             }
-            builder.Append(')');
+            f.Append(')');
             return unit;
         }
 
@@ -69,15 +67,15 @@ public static class AstNodePrinter {
         public void Visit(IEnumerable<Stmt> statements) {
             foreach (var stmt in statements) {
                 stmt.Accept(this);
-                builder.AppendLine();
+                f.AppendLine();
             }
         }
     }
 
     public static string ToDebugString(this AstNode node) {
-        var builder = new NestedStringBuilder();
-        node.Accept(new Visitor(builder));
-        return builder.ToString();
+        var formatter = new Formatter();
+        node.Accept(new Visitor(formatter));
+        return formatter.ToString().Trim();
     }
 
     // Very tempting still to add a SourceFile node type
@@ -85,9 +83,9 @@ public static class AstNodePrinter {
     // Reason why it needs to be seperate is because 
     // variables defined in earlier repl prompts need to be remembered
     public static string ToDebugString(this IEnumerable<Stmt> statements) {
-        var builder = new NestedStringBuilder();
-        var visitor = new Visitor(builder);
+        var formatter = new Formatter();
+        var visitor = new Visitor(formatter);
         visitor.Visit(statements);
-        return builder.ToString().Trim();
+        return formatter.ToString().Trim();
     }
 }

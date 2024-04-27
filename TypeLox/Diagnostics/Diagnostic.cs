@@ -1,80 +1,25 @@
 namespace TypeLox;
 
-using System.Diagnostics;
-
-using static DiagnosticKind;
-
-public enum DiagnosticKind {
-    Info,
-    Warning,
-    Error,
-}
-
-public static class DiagnosticKindMethods {
-    public static bool GetIsOK(this DiagnosticKind self) => self switch {
-        Error => false,
-        _ => true,
-    };
-
-    public static AnsiSgrPair GetColor(this DiagnosticKind self) => self switch {
-        Info => AnsiSgrPair.BrightBlueLetter,
-        Warning => AnsiSgrPair.BrightYellowLetter,
-        Error => AnsiSgrPair.BrightRedLetter,
-        _ => throw new UnreachableException(),
-    };
-}
-
-public record class Diagnostic(
+public sealed record class Diagnostic(
     DiagnosticKind Kind,
     SourceRange Location,
     string Message
-) : IBuildable {
+) : IDisplay {
     public bool IsOk { get; } = Kind.GetIsOK();
 
-    public void Format(StringBuilder b) => b.Wrap(Kind.GetColor(), () => {
-        b.Wrap(AnsiSgrPair.Inverted, () => {
-            b.Append(' ');
-            b.Append(Kind.ToString().ToUpperInvariant());
-            b.Append(' ');
+    public void Format(IFormatter f) => f.Wrap(Kind.GetColor(), () => {
+        f.Wrap(AnsiStyle.Inverted, () => {
+            f.Append(' ');
+            f.Append(Kind.ToString().ToUpperInvariant());
+            f.Append(' ');
         });
-        b.Append('\uE0B0');
-        b.Append(' ');
-        // b.Append(" at ");
-        b.Append(Location.ToString());
-        b.Append(':');
-        b.Append(' ');
-        b.AppendLine();
-        b.Append(Message);
+        f.Append('\uE0B0');
+        f.Append(' ');
+        Location.FormatHeader(f);
+        Location.FormatPreview(f);
+        f.AppendLine();
+        f.Append(Message);
     });
 
     public override string ToString() => this.FormatToString();
-}
-
-public class DiagnosticFormatter {
-    public record class StyleOptions {
-        public bool MultiLine { get; init; }
-    }
-    public StyleOptions Style { get; init; }
-
-    public DiagnosticFormatter() => Style = new();
-    public DiagnosticFormatter(StyleOptions style) => Style = style;
-
-    private readonly StringBuilder builder = new();
-
-    public void Append(char c) => builder.Append(c);
-    public void Append(string s) => builder.Append(s);
-
-    public void AppendLine() => builder.AppendLine();
-    public void AppendLine(string s) => builder.AppendLine(s);
-
-    public void AppendAnsiCode(int code) {
-        Append('\x1B');
-        Append('[');
-        Append(code.ToString());
-        Append('m');
-    }
-
-    public override string ToString() {
-        return builder.ToString();
-    }
 }
