@@ -167,8 +167,8 @@ class Interpreter(ICompilerHost host, ProgramOptions options) : IInterpreter, As
         var condition = Evaluate(node.Condition);
         if (condition.IsLoxTruthy()) {
             Execute(node.IfTrue);
-        } else {
-            Execute(node.IfFalse);
+        } else if (node.IfFalse is Stmt ifFalse) {
+            Execute(ifFalse);
         }
         return null;
     }

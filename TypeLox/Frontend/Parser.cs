@@ -223,19 +223,30 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         return expr;
     }
 
+    Expr.Super SuperExpression() {
+        var keyword = Previous();
+        Consume(DOT, "'.' after super");
+        var method = Consume(IDENTIFIER, "name of super method");
+        return new(keyword, method);
+    }
+
+    Expr.Grouping GroupingExpression() {
+        var expr = Expression();
+        Consume(RIGHT_PAREN, "')' after parenthesized expression");
+        return new(expr);
+    }
+
     Expr Primary() {
         if (MatchAny(NIL, FALSE, TRUE, NUMBER, STRING)) {
             return Expr.FromToken(Previous());
         } else if (Match(SUPER)) {
-            throw new NotImplementedException();
+            return SuperExpression();
         } else if (Match(THIS)) {
             return new Expr.This(Previous());
         } else if (Match(IDENTIFIER)) {
             return new Expr.Variable(Previous());
         } else if (Match(LEFT_PAREN)) {
-            var expr = Expression();
-            Consume(RIGHT_PAREN, "')' after parenthesized expression");
-            return new Expr.Grouping(expr);
+            return GroupingExpression();
         } else {
             throw Error("expected expression");
         }
@@ -249,10 +260,91 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
     // Statements //
     ////////////////
 
+    Stmt.If IfStatement() {
+        Consume(LEFT_PAREN, "'(' before condition");
+        var condition = Expression();
+        Consume(RIGHT_PAREN, "')' after condition");
+
+        var trueBranch = Statement();
+        Stmt? falseBranch = null;
+        if (Match(ELSE)) {
+            falseBranch = Statement();
+        }
+        return new(condition, trueBranch, falseBranch);
+    }
+
+    Stmt.While WhileStatement() {
+        Consume(LEFT_PAREN, "'(' before condition");
+        var condition = Expression();
+        Consume(RIGHT_PAREN, "')' after condition");
+        var body = Statement();
+        return new(condition, body);
+    }
+
+    // Foreshadowing...I want to add iterators
+    Stmt ForTripleStatement() {
+        Consume(LEFT_PAREN, "'(' before condition");
+
+        // var i = 0;
+        Stmt? initializer;
+        if (Match(SEMICOLON)) {
+            initializer = null;
+        } else if (Match(VAR)) {
+            initializer = VariableDeclaration();
+        } else {
+            initializer = ExpressionStatement();
+        }
+
+        // i < len
+        Expr condition;
+        if (!Check(SEMICOLON)) {
+            condition = Expression();
+        } else {
+            condition = new Expr.Literal(true);
+        }
+        Consume(SEMICOLON, "';' after condition");
+
+        // i = i + 1
+        Expr? increment = null;
+        if (!Check(RIGHT_PAREN)) {
+            increment = Expression();
+        }
+        Consume(RIGHT_PAREN, "')' after clauses");
+
+        var body = Statement();
+
+        if (increment is not null) {
+            body = new Stmt.Block([
+                body,
+                new Stmt.Expression(increment)
+            ]);
+        }
+
+        body = new Stmt.While(condition, body);
+
+        if (initializer is not null) {
+            body = new Stmt.Block([
+                initializer,
+                body
+            ]);
+        }
+
+        return body;
+    }
+
     Stmt.Print PrintStatement() {
         var value = Expression();
         Consume(SEMICOLON, "';' after to be printed value");
         return new Stmt.Print(value);
+    }
+
+    Stmt.Return ReturnStatement() {
+        var keyword = Previous();
+        Expr? value = null;
+        if (!Check(SEMICOLON)) {
+            value = Expression();
+        }
+        return new(keyword, value);
     }
 
     Stmt.Expression ExpressionStatement() {
@@ -275,15 +367,15 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
 
     Stmt Statement() {
         if (Match(FOR)) {
-            throw new NotImplementedException();
+            return ForTripleStatement();
         } else if (Match(IF)) {
-            throw new NotImplementedException();
+            return IfStatement();
         } else if (Match(PRINT)) {
             return PrintStatement();
         } else if (Match(WHILE)) {
-            throw new NotImplementedException();
+            return WhileStatement();
         } else if (Match(RETURN)) {
-            throw new NotImplementedException();
+            return ReturnStatement();
         } else if (Match(LEFT_BRACE)) {
             return Block();
         } else {

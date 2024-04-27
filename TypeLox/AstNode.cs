@@ -85,13 +85,13 @@ public abstract record class Stmt() : AstNode {
     public record class Function(Token Name, List<Token> Parameters, Block Body) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class If(Expr Condition, Stmt IfTrue, Stmt IfFalse) : Stmt {
+    public record class If(Expr Condition, Stmt IfTrue, Stmt? IfFalse) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Print(Expr Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Return(Expr? Expr) : Stmt {
+    public record class Return(Token Keyword, Expr? Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Var(Token Name, Expr? Initializer) : Stmt {
