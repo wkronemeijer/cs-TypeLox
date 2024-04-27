@@ -1,7 +1,7 @@
 namespace TypeLox;
 
 public abstract partial record class AstNode : IDebug {
-    private class Visitor(StringBuilder builder) : IVisitor<Unit> {
+    private class Visitor(NestedStringBuilder builder) : IVisitor<Unit> {
         private void Handle(object? o) {
             if (o is null) {
                 builder.Append("null");
@@ -22,15 +22,13 @@ public abstract partial record class AstNode : IDebug {
 
         private Unit WrapArray(object?[] objects) {
             builder.Append('[');
-            var isFirst = true;
+            builder.Indent();
+            builder.AppendLine();
             foreach (var o in objects) {
-                if (isFirst) {
-                    isFirst = false;
-                } else {
-                    builder.Append(' ');
-                }
                 Handle(o);
+                builder.AppendLine();
             }
+            builder.Dedent();
             builder.Append(']');
             return unit;
         }
@@ -67,15 +65,11 @@ public abstract partial record class AstNode : IDebug {
         public Unit Visit(Stmt.Return node) => Wrap("return", node.Expr);
         public Unit Visit(Stmt.Var node) => Wrap("var", node.Name, node.Initializer);
         public Unit Visit(Stmt.While node) => Wrap("while", node.Body);
-
-        public void AppendNode(AstNode node) {
-            node.Accept(this);
-        }
     }
 
     public string ToDebugString() {
-        var builder = new StringBuilder();
-        new Visitor(builder).AppendNode(this);
+        var builder = new NestedStringBuilder();
+        Accept(new Visitor(builder));
         return builder.ToString();
     }
 }
