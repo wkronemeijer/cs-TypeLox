@@ -1,4 +1,4 @@
-using TypeLox;
+namespace TypeLox.Cli;
 
 internal abstract record class ProgramMode(ProgramOptions Options) {
     public interface IVisitor {

@@ -2,7 +2,7 @@ namespace TypeLox.Backend.Treewalker;
 
 using static TokenKind;
 
-interface IInterpreter {
+public interface IInterpreter {
     /// <summary>
     /// Host environment, which provides file system and output abstraction.
     /// </summary>

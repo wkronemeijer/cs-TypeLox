@@ -1,7 +1,8 @@
-﻿using TypeLox;
+﻿namespace TypeLox.Cli;
+
 using TypeLox.Backend.Treewalker;
 
-class Program(IInterpreter interpreter) : ProgramMode.IVisitor {
+public class Program(IInterpreter interpreter) : ProgramMode.IVisitor {
     void ProgramMode.IVisitor.Visit(ProgramMode.Repl command) {
         while (true) {
             try {
