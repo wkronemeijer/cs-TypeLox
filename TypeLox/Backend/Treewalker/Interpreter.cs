@@ -186,6 +186,14 @@ class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     // Statements //
     ////////////////
 
+    public object? Visit(Stmt.Assert node) {
+        var value = Evaluate(node.Expr);
+        if (!value.IsLoxTruthy()) {
+            throw new LoxRuntimeException(node.Keyword.Location, "assertion failed");
+        }
+        return null;
+    }
+
     public object? Visit(Stmt.Block node) {
         ExecuteBlock(node.Statements, new Env(currentEnvironment));
         return null;

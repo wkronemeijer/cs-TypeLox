@@ -14,6 +14,8 @@ public abstract record class AstNode {
         R Visit(Expr.This node);
         R Visit(Expr.Unary node);
         R Visit(Expr.Variable node);
+
+        R Visit(Stmt.Assert node);
         R Visit(Stmt.Block node);
         R Visit(Stmt.Class node);
         R Visit(Stmt.Expression node);
@@ -73,6 +75,9 @@ public abstract record class Expr : AstNode {
 }
 
 public abstract record class Stmt() : AstNode {
+    public record class Assert(Token Keyword, Expr Expr) : Stmt {
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
+    }
     public record class Block(List<Stmt> Statements) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }

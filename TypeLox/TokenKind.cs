@@ -34,6 +34,7 @@ public enum TokenKind {
     FOR,
     RETURN,
     PRINT,
+    ASSERT,
     THIS,
     SUPER,
     AND,

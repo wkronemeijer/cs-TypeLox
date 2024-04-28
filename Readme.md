@@ -25,3 +25,9 @@ the test suite includes
 print nil; // expect: nil
 ```
 ...which is going to be really fun when trying to transpile.
+
+## New features added to Lox
+
+### `assert`  
+
+Used to put the expected output within the code, instead of using a testrunner that parses comments.

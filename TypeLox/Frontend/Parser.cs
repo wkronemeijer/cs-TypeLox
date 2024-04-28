@@ -338,6 +338,13 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         return new Stmt.Print(value);
     }
 
+    Stmt.Assert AssertStatement() {
+        var keyword = Previous();
+        var value = Expression();
+        Consume(SEMICOLON, "';' after inspected value");
+        return new(keyword, value);
+    }
+
     Stmt.Return ReturnStatement() {
         var keyword = Previous();
         Expr? value = null;
@@ -372,6 +379,8 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
             return IfStatement();
         } else if (Match(PRINT)) {
             return PrintStatement();
+        } else if (Match(ASSERT)) {
+            return AssertStatement();
         } else if (Match(WHILE)) {
             return WhileStatement();
         } else if (Match(RETURN)) {
