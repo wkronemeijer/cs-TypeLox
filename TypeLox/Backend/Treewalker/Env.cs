@@ -12,7 +12,7 @@ public sealed class Env(Env? parent) {
     private readonly Dictionary<string, object?> values = [];
 
     private static LoxRuntimeException UndefinedVariableException(Token name) {
-        return new LoxRuntimeException(name.Location, $"undefined variable '{name.Lexeme}'");
+        return new(name.Location, $"undefined variable '{name.Lexeme}'");
     }
 
     public void Define(Token name, object? value) {
