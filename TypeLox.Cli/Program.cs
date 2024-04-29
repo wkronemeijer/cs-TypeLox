@@ -32,10 +32,15 @@ public class Program(ICompiler compiler) : ProgramMode.IVisitor {
     }
 
     public static void Main(string[] args) {
-        var (mode, options) = ProgramMode.Parse(args);
+        var (mode, options) = ArgsParser.Parse(args);
         var host = new RealCompilerHost(options.CompilerOptions);
-        // TODO: Read program options to pick which backend to use
-        var compiler = new TreeWalkInterpreter(host);
+        var compiler = SelectBackend(host, options);
+        host.WriteLine($"Using backend '{compiler.Name}'.");
         mode.Accept(new Program(compiler));
     }
+
+    private static ICompiler SelectBackend(ICompilerHost host, ProgramOptions options) => options.Backend switch {
+        null => new TreeWalkInterpreter(host),
+        _ => throw new Exception($"unknown backend '{options.Backend}'"),
+    };
 }

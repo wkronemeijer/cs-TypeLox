@@ -8,6 +8,8 @@ public interface ICompiler {
     /// </summary>
     string Name { get; }
 
+    IEnumerable<string> GetAliases() { yield break; }
+
     /// <summary>
     /// Host environment, which provides file system and output abstraction.
     /// </summary>
