@@ -6,11 +6,14 @@ using System.IO;
 /// Links Uri with contents. Useful so it can be swapped out during testing.
 /// </summary>
 public interface ICompilerHost {
-    public Source CreateSourceFromFile(Uri uri);
-    public Source CreateSourceFromSnippet(string code);
+    public CompilerOptions Options { get; }
 
-    // TODO: Add:
-    // public Uri GetCurrentDirectory();
+    // Method, as to acknowledge this result can change at any time,
+    // not just as a consequence of calling methods on this object.
+    public Uri GetCurrentDirectory();
+    public Source CreateSourceFromSnippet(string code);
+    public Source ReadFile(Uri uri);
+    public List<Source> ReadDirectory(Uri uri);
 
     public void WriteLine(string s);
     public void WriteLine() => WriteLine("");
@@ -19,11 +22,19 @@ public interface ICompilerHost {
 /// <summary>
 /// Compiler host backed by the file system and stdout.
 /// </summary>
-public class RealCompilerHost : ICompilerHost {
-    public Source CreateSourceFromFile(Uri uri) {
+public class RealCompilerHost(CompilerOptions options) : ICompilerHost {
+    public CompilerOptions Options => options;
+
+    public Uri GetCurrentDirectory() => Environment.CurrentDirectory.ToFileUri();
+
+    public Source ReadFile(Uri uri) {
         // TODO: This is where CompilerHost comes into play
         var code = File.ReadAllText(uri.ToFilePath(), Encoding.UTF8);
         return new Source(uri, code);
+    }
+
+    public List<Source> ReadDirectory(Uri uri) {
+        throw new NotImplementedException();
     }
 
     public Source CreateSourceFromSnippet(string code) {

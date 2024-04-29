@@ -6,8 +6,3 @@ public class LoxException(Diagnostic diagnostic) : Exception(diagnostic.Message)
 
     public override string ToString() => Diagnostic.ToString();
 }
-
-// ...but analysis has diagnostics? and almost always you can continue diagnosing
-public class LoxCompileException(Diagnostic diagnostic) : LoxException(diagnostic) { }
-
-public class LoxRuntimeException(SourceRange location, string message) : LoxException(new(DiagnosticKind.Error, location, message));

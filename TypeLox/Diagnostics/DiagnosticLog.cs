@@ -9,7 +9,7 @@ public interface IDiagnosticLog {
     /// <summary>
     /// Throws if the log is not OK, i.e. when it contains any errors.
     /// </summary>
-    /// <exception cref="LoxCompileException"/>
+    /// <exception cref="LoxException"/>
     void ThrowIfNotOk();
 
     /// <summary>
@@ -56,7 +56,7 @@ public class DiagnosticLog() : IDiagnosticLog, IDisplay, IEnumerable<Diagnostic>
 
     public void ThrowIfNotOk() {
         if (FindFirstError() is Diagnostic d) {
-            throw new LoxCompileException(d);
+            throw new LoxException(d);
         }
     }
 

@@ -2,42 +2,18 @@ namespace TypeLox.Backend.Treewalker;
 
 using static TokenKind;
 
-public interface IInterpreter {
-    /// <summary>
-    /// Host environment, which provides file system and output abstraction.
-    /// </summary>
-    ICompilerHost Host { get; }
+class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
+    public string Name => "treewalk";
 
-    /// <summary>
-    /// Runs a piece of source code.
-    /// </summary>
-    void Run(Source source);
-
-    /// <summary>
-    /// Runs a source file.
-    /// </summary>
-    void RunFile(Uri uri) {
-        Run(Host.CreateSourceFromFile(uri));
-    }
-
-    /// <summary>
-    /// Runs an indepedent snippet of code.
-    /// </summary>
-    void RunSnippet(string snippet) {
-        Run(Host.CreateSourceFromSnippet(snippet));
-    }
-}
-
-class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     public ICompilerHost Host { get; }
 
-    private readonly ProgramOptions options;
+    private readonly CompilerOptions options;
     private readonly Env globalEnvironment = new();
     private Env currentEnvironment;
 
-    public Interpreter(ICompilerHost host, ProgramOptions programOptions) {
+    public TreeWalkInterpreter(ICompilerHost host) {
         Host = host;
-        options = programOptions;
+        options = host.Options;
         currentEnvironment = globalEnvironment;
     }
 
@@ -64,7 +40,7 @@ class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         return root;
     }
 
-    public void Run(Source source) {
+    private void Run(Source source, bool isolated) {
         // Idea: configurable run pipeline
         var log = new DiagnosticLog();
         var root = Compile(source, log);
@@ -74,11 +50,15 @@ class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
             return;
         }
         try {
-            ExecuteBlock(root, currentEnvironment);
+            var env = isolated ? new Env(currentEnvironment) : currentEnvironment;
+            ExecuteBlock(root, env);
         } catch (LoxRuntimeException e) {
             Host.WriteLine(e.ToString());
         }
     }
+
+    public void RunAsModule(Source source) => Run(source, isolated: true);
+    public void RunAsScript(Source source) => Run(source, isolated: false);
 
     //////////////////
     // Interpreting //
