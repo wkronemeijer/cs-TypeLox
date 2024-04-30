@@ -36,6 +36,6 @@ public interface ICompiler {
     /// Runs an indepedent snippet of code.
     /// </summary>
     void RunLine(string snippet) {
-        RunAsScript(Host.CreateSourceFromSnippet(snippet));
+        RunAsScript(Source.FromString(snippet));
     }
 }

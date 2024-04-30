@@ -33,7 +33,7 @@ public class Program(ICompiler compiler) : ProgramMode.IVisitor {
 
     public static void Main(string[] args) {
         var (mode, options) = ArgsParser.Parse(args);
-        var host = new RealCompilerHost(options.CompilerOptions);
+        var host = new CompilerHost(options.CompilerOptions);
         var compiler = SelectBackend(host, options);
         host.WriteLine($"Using backend '{compiler.Name}'.");
         mode.Accept(new Program(compiler));

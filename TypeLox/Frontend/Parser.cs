@@ -94,6 +94,7 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
 
     void Synchronize() {
         Advance(); // skip the offending token
+        // FIXME: this also skips over the EOF
         while (!IsAtEnd) {
             if (Previous().Kind == SEMICOLON) {
                 return;

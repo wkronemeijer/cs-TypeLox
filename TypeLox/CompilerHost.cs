@@ -11,7 +11,6 @@ public interface ICompilerHost {
     // Method, as to acknowledge this result can change at any time,
     // not just as a consequence of calling methods on this object.
     public Uri GetCurrentDirectory();
-    public Source CreateSourceFromSnippet(string code);
     public Source ReadFile(Uri uri);
     public List<Source> ReadDirectory(Uri uri);
 
@@ -22,7 +21,7 @@ public interface ICompilerHost {
 /// <summary>
 /// Compiler host backed by the file system and stdout.
 /// </summary>
-public class RealCompilerHost(CompilerOptions options) : ICompilerHost {
+public class CompilerHost(CompilerOptions options) : ICompilerHost {
     public CompilerOptions Options => options;
 
     public Uri GetCurrentDirectory() => Environment.CurrentDirectory.ToFileUri();
@@ -35,11 +34,6 @@ public class RealCompilerHost(CompilerOptions options) : ICompilerHost {
 
     public List<Source> ReadDirectory(Uri uri) {
         throw new NotImplementedException();
-    }
-
-    public Source CreateSourceFromSnippet(string code) {
-        var uri = new Uri($"lox:/snippet/{code.GetHashCode():x8}");
-        return new Source(uri, code);
     }
 
     public void WriteLine(string s) => Console.WriteLine(s);
