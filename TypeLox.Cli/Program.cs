@@ -32,6 +32,7 @@ public class Program(ICompiler compiler) : ProgramMode.IVisitor {
     public void Visit(ProgramMode.TestDirectory value) {
         var sources = compiler.Host.FindTestFiles();
         var runner = new TestRunner(compiler, sources);
+        Console.WriteLine($"running {sources.Count} test(s)");
         runner.RunAllTests();
     }
 
@@ -40,7 +41,7 @@ public class Program(ICompiler compiler) : ProgramMode.IVisitor {
         var (mode, options) = ArgsParser.Parse(args);
         var host = new CompilerHost(options.CompilerOptions);
         var compiler = SelectBackend(host, options);
-        host.WriteLine($"Using backend '{compiler.Name}'.");
+        host.WriteLine($"using backend '{compiler.Name}'");
         mode.Accept(new Program(compiler));
     }
 }
