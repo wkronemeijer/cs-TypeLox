@@ -79,9 +79,6 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
         }
     }
 
-    public static bool IsTruthy(object? value) => value.IsLoxTruthy();
-    public static string Stringify(object? value) => value.ToLoxString();
-
     /////////////////
     // Expressions //
     /////////////////
@@ -114,9 +111,16 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
                 return l > r;
             case GREATER_EQUAL when left is double l && right is double r:
                 return l >= r;
+
             // String
             case PLUS when left is string l && right is string r:
                 return l + r;
+
+            // Any
+            case EQUAL_EQUAL:
+                return left.LoxEquals(right);
+            case BANG_EQUAL:
+                return !left.LoxEquals(right);
         }
         throw new LoxRuntimeException(
             node.Operator.Location,
@@ -155,10 +159,10 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
     public object? Visit(Expr.Unary node) {
         var right = Evaluate(node.Right);
         switch (node.Operator.Kind) {
-            case MINUS when right is double d:
-                return -d;
+            case MINUS when right is double number:
+                return -number;
             case BANG:
-                return !IsTruthy(right);
+                return !right.IsLoxTruthy();
         }
         throw new LoxRuntimeException(node.Operator.Location, "invalid operand");
     }
@@ -206,7 +210,7 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
 
     public object? Visit(Stmt.Print node) {
         var value = Evaluate(node.Expr);
-        Host.WriteLine(Stringify(value));
+        Host.WriteLine(value.ToLoxString());
         return null;
     }
 

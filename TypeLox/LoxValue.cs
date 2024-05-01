@@ -18,6 +18,15 @@ public static class LoxValueObjectExtensions {
         _ => true,
     };
 
+    // Note: because this is an extension method, lhs can be null (unlike Object.Equals)
+    public static bool LoxEquals(this object? lhs, object? rhs) => (lhs, rhs) switch {
+        (null, null) => true,
+        (bool a, bool b) => a == b,
+        (double a, double b) => a == b, // TODO: How should NaN be handled? SameValueZero?
+        (string a, string b) => a == b,
+        _ => false,
+    };
+
     public static string GetLoxTypeOf(this object? value) => value switch {
         null => "nil",
         bool => "boolean",
