@@ -1,8 +1,8 @@
 namespace TypeLox;
 
-public class LoxException(Diagnostic diagnostic) : Exception(diagnostic.Message) {
-    public Diagnostic Diagnostic { get; } = diagnostic;
-    public SourceRange Location { get; } = diagnostic.Location;
+public class LoxException(SourceRange location, string message) : Exception(message) {
+    public SourceRange Location { get; } = location;
 
-    public override string ToString() => Diagnostic.ToString();
+    public Diagnostic ToDiagnostic() => new(DiagnosticKind.Error, Location, Message);
+    public override string ToString() => ToDiagnostic().ToString();
 }

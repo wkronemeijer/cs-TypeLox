@@ -1,5 +1,6 @@
 namespace TypeLox;
 
+// TODO: There should be a 1:1 between error diagnostics and LoxExceptions
 public sealed record class Diagnostic(
     DiagnosticKind Kind,
     SourceRange Location,
@@ -7,19 +8,23 @@ public sealed record class Diagnostic(
 ) : IDisplay {
     public bool IsOk { get; } = Kind.GetIsOK();
 
-    public void Format(IFormatter f) => f.Wrap(Kind.GetColor(), () => {
-        f.Wrap(AnsiStyle.Inverted, () => {
+    private const char POWERLINE = '\uE0B0';
+    public void Format(IFormatter f) {
+        f.Wrap(Kind.GetColor(), delegate {
+            f.Wrap(AnsiStyle.Inverted, delegate {
+                f.Append(' ');
+                f.Append(Kind.ToString().ToUpperInvariant());
+                f.Append(' ');
+            });
+            f.Append(POWERLINE);
             f.Append(' ');
-            f.Append(Kind.ToString().ToUpperInvariant());
-            f.Append(' ');
+            Location.FormatHeader(f);
+            Location.FormatPreview(f);
+            f.AppendLine();
+            f.Append(Message);
         });
-        f.Append('\uE0B0');
-        f.Append(' ');
-        Location.FormatHeader(f);
-        Location.FormatPreview(f);
-        f.AppendLine();
-        f.Append(Message);
-    });
+    }
 
+    public LoxException ToException() => new(Location, Message);
     public override string ToString() => this.FormatToString();
 }

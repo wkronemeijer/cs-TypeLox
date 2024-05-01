@@ -118,7 +118,10 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
             case PLUS when left is string l && right is string r:
                 return l + r;
         }
-        throw new LoxRuntimeException(node.Operator.Location, $"invalid operands for {node.Operator.Lexeme}");
+        throw new LoxRuntimeException(
+            node.Operator.Location,
+            $"unsupported operation: {left?.GetType()} {node.Operator.Lexeme} {right?.GetType()}"
+        );
     }
 
     public object? Visit(Expr.Call node) {

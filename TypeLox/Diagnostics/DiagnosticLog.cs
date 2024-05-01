@@ -1,6 +1,6 @@
 namespace TypeLox;
 
-public interface IDiagnosticLog {
+public interface IDiagnosticLog : IEnumerable<Diagnostic>, IDisplay {
     /// <summary>
     /// Returns whether the log is OK, i.e. when it doesn't contain any errors.
     /// </summary>
@@ -40,7 +40,7 @@ public interface IDiagnosticLog {
     }
 }
 
-public class DiagnosticLog() : IDiagnosticLog, IDisplay, IEnumerable<Diagnostic> {
+public class DiagnosticLog() : IDiagnosticLog {
     private readonly List<Diagnostic> diagnostics = [];
 
     private Diagnostic? FindFirstError() {
@@ -56,7 +56,7 @@ public class DiagnosticLog() : IDiagnosticLog, IDisplay, IEnumerable<Diagnostic>
 
     public void ThrowIfNotOk() {
         if (FindFirstError() is Diagnostic d) {
-            throw new LoxException(d);
+            throw d.ToException();
         }
     }
 

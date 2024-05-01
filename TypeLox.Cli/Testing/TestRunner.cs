@@ -15,7 +15,7 @@ public sealed class TestRunner(
             compiler.RunAsModule(source);
             tally.Add(TestResult.Success);
         } catch (LoxException e) {
-            diagnostics.Add(e.Diagnostic);
+            diagnostics.Add(e.ToDiagnostic());
             tally.Add(TestResult.Failure);
         }
     }
