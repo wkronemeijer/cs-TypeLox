@@ -102,8 +102,8 @@ public sealed class ArgsParser(string[] args) {
                 return new ProgramMode.Repl();
             case ["run", string fileToRun]:
                 return new ProgramMode.ExecuteFile(fileToRun.ToFileUri());
-            case ["test", string dirToTest]:
-                return new ProgramMode.TestDirectory(dirToTest.ToFileUri());
+            case ["test"]:
+                return new ProgramMode.TestDirectory();
             case [string file]:
                 return new ProgramMode.ExecuteFile(file.ToFileUri());
             default:

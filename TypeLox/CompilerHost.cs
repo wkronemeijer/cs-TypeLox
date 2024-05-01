@@ -12,7 +12,7 @@ public interface ICompilerHost {
     // not just as a consequence of calling methods on this object.
     public Uri GetCurrentDirectory();
     public Source ReadFile(Uri uri);
-    public List<Source> ReadDirectory(Uri uri);
+    public List<Source> FindTestFiles();
 
     public void WriteLine(string s);
     public void WriteLine() => WriteLine("");
@@ -32,9 +32,11 @@ public class CompilerHost(CompilerOptions options) : ICompilerHost {
         return new Source(uri, code);
     }
 
-    public List<Source> ReadDirectory(Uri uri) {
-        throw new NotImplementedException();
-    }
+    public List<Source> FindTestFiles() =>
+        Directory.EnumerateFiles(".", "*.test.lox", SearchOption.AllDirectories)
+        .Select(file => ReadFile(file.ToFileUri()))
+        .ToList()
+    ;
 
     public void WriteLine(string s) => Console.WriteLine(s);
     public void WriteLine() => Console.WriteLine();

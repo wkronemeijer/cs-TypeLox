@@ -1,6 +1,8 @@
 namespace TypeLox.Cli;
 
-using TypeLox.Backend.Treewalker;
+using System.Diagnostics;
+
+using static TestResultKind;
 
 public enum TestResultKind {
     Undecisive,
@@ -8,12 +10,37 @@ public enum TestResultKind {
     Failure,
 }
 
-public sealed class TestSuiteResult() {
+public static class TestResultKindMethods {
+    public static string GetFormattedName(this TestResultKind self) => self switch {
+        Undecisive => "skipped",
+        Success => "passed",
+        Failure => "failed",
+        _ => throw new UnreachableException(),
+    };
+}
+
+public sealed class TestResultCounter() : IDisplay {
+    public int Total { get; private set; } = 0;
     private readonly Dictionary<TestResultKind, int> countByKind = [];
 
     public void Add(TestResultKind kind) {
+        Console.WriteLine($"Inc({kind})");
         countByKind.TryGetValue(kind, out var count);
         countByKind[kind] = count + 1;
+        Total += 1;
+    }
+
+    public void Format(IFormatter f) {
+        foreach (var kind in Enum.GetValues<TestResultKind>()) {
+            countByKind.TryGetValue(kind, out var count);
+            f.Append(count);
+            f.Append(' ');
+            f.Append(kind.ToString());
+            f.Append(", ");
+        }
+        f.Append(" (");
+        f.Append(Total);
+        f.Append(" total)");
     }
 }
 
@@ -23,27 +50,32 @@ public sealed class TestRunner(
     // to select between variants
     ICompiler compiler,
     IList<Source> sources
-) {
-    private readonly TestSuiteResult tally = new();
+) : IDisplay {
+    private readonly TestResultCounter tally = new();
 
     private readonly DiagnosticLog diagnostics = [];
 
     private void RunTest(Source source) {
         try {
             compiler.RunAsModule(source);
-            tally.Add(TestResultKind.Success);
+            tally.Add(Success);
         } catch (LoxException e) {
             diagnostics.Add(e.Diagnostic);
-            tally.Add(TestResultKind.Failure);
+            tally.Add(Failure);
         }
     }
 
+    public void Format(IFormatter f) {
+        f.Include(tally);
+        if (!diagnostics.IsOk) {
+            f.Include(diagnostics);
+            f.Include(tally);
+        }
+    }
     public void RunAllTests() {
         foreach (var source in sources) {
             RunTest(source);
         }
-        if (!diagnostics.IsOk) {
-            compiler.Host.WriteLine(diagnostics.CreateReport());
-        }
+        compiler.Host.WriteLine(this.FormatToString().Trim());
     }
 }

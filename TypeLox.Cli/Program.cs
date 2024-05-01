@@ -30,8 +30,7 @@ public class Program(ICompiler compiler) : ProgramMode.IVisitor {
     }
 
     public void Visit(ProgramMode.TestDirectory value) {
-        var uri = value.DirectoryUri ?? compiler.Host.GetCurrentDirectory();
-        var sources = compiler.Host.ReadDirectory(uri);
+        var sources = compiler.Host.FindTestFiles();
         var runner = new TestRunner(compiler, sources);
         runner.RunAllTests();
     }

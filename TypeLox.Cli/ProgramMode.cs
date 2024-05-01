@@ -24,15 +24,9 @@ public abstract record class ProgramMode() {
     }
 
     /// <summary>
-    /// Reads the file, then executes it, then terminates.
+    /// Finds all files ./**/*.test.lox and runs them for as tests.
     /// </summary>
-    public record class TestDirectory(Uri? DirectoryUri) : ProgramMode() {
+    public record class TestDirectory() : ProgramMode() {
         public override void Accept(IVisitor visitor) => visitor.Visit(this);
     }
-
-    ////////////
-    // Parser //
-    ////////////
-
-
 }
