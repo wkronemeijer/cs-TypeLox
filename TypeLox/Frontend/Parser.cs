@@ -27,7 +27,8 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         return 0 <= index && index < tokens.Count;
     }
 
-    bool IsAtEnd => Peek().Kind == EOF;
+    // Beginning to feel that that EOF token is more trouble that it is worth
+    bool IsAtEnd => !IsValid(current);
 
     Token Advance() {
         return tokens[current++];
@@ -85,24 +86,24 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         return Recovery.start;
     }
 
-    static bool CanSynchronize(TokenKind self) => self switch {
+    static bool CanSynchronizeAfter(TokenKind self) => self switch {
+        SEMICOLON => true,
+        _ => false,
+    };
+
+    static bool CanSynchronizeBefore(TokenKind self) => self switch {
         VAR or FUN or CLASS => true,
         IF or WHILE or FOR => true,
         PRINT or RETURN => true,
+        EOF => true,
         _ => false,
     };
 
     void Synchronize() {
-        Advance(); // skip the offending token
-        // FIXME: this also skips over the EOF
         while (!IsAtEnd) {
-            if (Previous().Kind == SEMICOLON) {
-                return;
-            } else if (CanSynchronize(Peek().Kind)) {
-                return;
-            } else {
-                Advance();
-            }
+            if (CanSynchronizeBefore(Peek().Kind)) { return; }
+            Advance();
+            if (CanSynchronizeAfter(Previous().Kind)) { return; }
         }
     }
 
@@ -461,7 +462,7 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
     public List<Stmt> Parse() {
         var statements = new List<Stmt>();
         try {
-            while (!IsAtEnd) {
+            while (Peek().Kind != EOF) {
                 statements.AddNotNull(DeclarationOrStatement());
             }
             Consume(EOF, "end of file");
