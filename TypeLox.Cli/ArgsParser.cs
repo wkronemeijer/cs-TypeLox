@@ -95,6 +95,15 @@ public sealed class ArgsParser(string[] args) {
             HelpText = "Print the tree after parsing.",
         });
 
+        DefineFlag(new() {
+            Name = "VarArgs",
+            Action = delegate {
+                options.CompilerOptions.AllowUnderApplication = true;
+                options.CompilerOptions.AllowOverApplication = true;
+            },
+            HelpText = "Print the tree after parsing.",
+        });
+
         ProcessArgs();
 
         switch (positionals) {

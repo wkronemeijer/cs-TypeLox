@@ -2,7 +2,16 @@ namespace TypeLox.Backend.Treewalker;
 
 using static TokenKind;
 
-class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
+// Hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+// Does this make sense? 
+// Should we put it somewhere else?
+public interface IInterpreter : ICompiler {
+    public object? Evaluate(Expr expr);
+    public void Execute(Stmt stmt);
+    public void ExecuteBlock(IList<Stmt> stmts, Env environment);
+}
+
+class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
     public string Name => "treewalk";
 
     public ICompilerHost Host { get; }
@@ -15,6 +24,8 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
         Host = host;
         options = host.Options;
         currentEnvironment = globalEnvironment;
+
+        StdLib.DefineGlobals(globalEnvironment);
     }
 
     // TODO: Split out a compiler class? The front is going to be re-used for different backends
@@ -129,7 +140,15 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
     }
 
     public object? Visit(Expr.Call node) {
-        throw new NotImplementedException();
+        var callee = Evaluate(node.Callee);
+        // Does Select always evaluate in sequence?
+        var arguments = node.Arguments.Select(Evaluate).ToList();
+        var location = node.Paren.Location;
+        if (callee is ILoxCallable callable) {
+            return callable.Call(this, location, arguments);
+        } else {
+            throw new LoxRuntimeException(location, $"{callee?.GetType()} is not callable");
+        }
     }
 
     public object? Visit(Expr.GetProperty node) {
@@ -196,7 +215,8 @@ class TreeWalkInterpreter : ICompiler, AstNode.IVisitor<object?> {
     }
 
     public object? Visit(Stmt.Function node) {
-        throw new NotImplementedException();
+        currentEnvironment.Define(node.Name, new LoxFunction(node));
+        return null;
     }
 
     public object? Visit(Stmt.If node) {

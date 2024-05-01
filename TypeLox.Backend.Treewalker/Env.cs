@@ -15,10 +15,12 @@ public sealed class Env(Env? parent) {
         return new(name.Location, $"undefined variable '{name.Lexeme}'");
     }
 
-    public void Define(Token name, object? value) {
+    public void Define(string name, object? value) {
         // TODO: Check if it already exists?
-        values[name.Lexeme] = value;
+        values[name] = value;
     }
+
+    public void Define(Token name, object? value) => Define(name.Lexeme, value);
 
     public object? Get(Token name) {
         if (values.TryGetValue(name.Lexeme, out var value)) {

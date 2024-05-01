@@ -353,6 +353,7 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         if (!Check(SEMICOLON)) {
             value = Expression();
         }
+        Consume(SEMICOLON, "';' after return value");
         return new(keyword, value);
     }
 
