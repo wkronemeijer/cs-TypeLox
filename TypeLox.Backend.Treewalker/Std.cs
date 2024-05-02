@@ -35,5 +35,19 @@ public static class StdLib {
             double time = DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000.0;
             return time;
         });
+
+        globals.DefineFunction("pcall", 1, (ip, loc, args) => {
+            var arg = args[0];
+            if (arg is not ILoxCallable callable) {
+                throw new LoxRuntimeException(loc, $"argument {arg.ToLoxDebugString()} is not callable");
+            }
+
+            try {
+                callable.Call(ip, loc, []);
+                return true;
+            } catch (LoxRuntimeException) {
+                return false;
+            }
+        });
     }
 }

@@ -1,0 +1,10 @@
+fun doesntThrow() {
+    return 2 + 1;
+}
+
+fun throws() {
+    return 2 + true;
+}
+
+assert pcall(doesntThrow);
+assert !pcall(throws);
