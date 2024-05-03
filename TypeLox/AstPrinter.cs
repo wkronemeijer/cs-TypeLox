@@ -7,6 +7,8 @@ public static class AstNodePrinter {
                 f.Append("null");
             } else if (o is string s) {
                 f.Append(s);
+            } else if (o is Uri uri) {
+                f.Append(uri.ToString());
             } else if (o is Token token) {
                 token.FormatLexeme(f);
             } else if (o is AstNode node) {
@@ -19,15 +21,19 @@ public static class AstNodePrinter {
         }
 
         private Unit WrapArray(object?[] objects) {
-            f.Append('[');
-            f.Indent();
-            f.AppendLine();
-            foreach (var o in objects) {
-                Handle(o);
+            if (objects is []) {
+                f.Append("[]");
+            } else {
+                f.Append('[');
+                f.Indent();
                 f.AppendLine();
+                foreach (var o in objects) {
+                    Handle(o);
+                    f.AppendLine();
+                }
+                f.Dedent();
+                f.Append(']');
             }
-            f.Dedent();
-            f.Append(']');
             return unit;
         }
 
@@ -47,7 +53,7 @@ public static class AstNodePrinter {
         public Unit Visit(Expr.Call node) => Wrap("call", node.Callee, node.Arguments);
         public Unit Visit(Expr.GetProperty node) => Wrap("get", node.Target, node.Name);
         public Unit Visit(Expr.Grouping node) => Wrap("group", node.Inner);
-        public Unit Visit(Expr.Literal node) => Wrap("literal", node.Value.ToLoxDebugString());
+        public Unit Visit(Expr.Literal node) => Wrap($"@{node.Value.ToLoxDebugString()}");
         public Unit Visit(Expr.Logical node) => Wrap(node.Operator.Lexeme, node.Left, node.Right);
         public Unit Visit(Expr.SetProperty node) => Wrap("set", node.Target, node.Name, node.Value);
         public Unit Visit(Expr.Super node) => Wrap("super", node.Name);
@@ -59,8 +65,9 @@ public static class AstNodePrinter {
         public Unit Visit(Stmt.Block node) => Wrap("block", node.Statements);
         public Unit Visit(Stmt.Class node) => Wrap("class", node.Name, node.Superclass, node.Methods);
         public Unit Visit(Stmt.Expression node) => Wrap("expr", node.Expr);
-        public Unit Visit(Stmt.Function node) => Wrap("fun", node.Name, node.Parameters, node.Body);
+        public Unit Visit(Stmt.Function node) => Wrap("fun", node.Name, node.Parameters, node.Statements);
         public Unit Visit(Stmt.If node) => Wrap("if", node.IfTrue, node.IfFalse);
+        public Unit Visit(Stmt.Module node) => Wrap("mod", node.Uri, node.Statements);
         public Unit Visit(Stmt.Print node) => Wrap("print", node.Expr);
         public Unit Visit(Stmt.Return node) => Wrap("return", node.Expr);
         public Unit Visit(Stmt.Var node) => Wrap("var", node.Name, node.Initializer);

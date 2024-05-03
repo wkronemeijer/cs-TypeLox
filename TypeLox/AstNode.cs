@@ -21,6 +21,7 @@ public abstract record class AstNode {
         R Visit(Stmt.Expression node);
         R Visit(Stmt.Function node);
         R Visit(Stmt.If node);
+        R Visit(Stmt.Module node);
         R Visit(Stmt.Print node);
         R Visit(Stmt.Return node);
         R Visit(Stmt.Var node);
@@ -49,6 +50,10 @@ public abstract record class Expr : AstNode {
     }
     public record class Literal(object? Value) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
+
+        public static Literal FromToken(Token token) {
+            return new(token.GetNativeValue());
+        }
     }
     public record class Logical(Expr Left, Token Operator, Expr Right) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
@@ -68,10 +73,6 @@ public abstract record class Expr : AstNode {
     public record class Variable(Token Name) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-
-    public static Literal FromToken(Token token) {
-        return new(token.GetNativeValue());
-    }
 }
 
 public abstract record class Stmt() : AstNode {
@@ -87,21 +88,37 @@ public abstract record class Stmt() : AstNode {
     public record class Expression(Expr Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Function(Token Name, List<Token> Parameters, Block Body) : Stmt {
+
+    public record class Function(
+        Token Name,
+        List<Token> Parameters,
+        List<Stmt> Statements
+    ) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class If(Expr Condition, Stmt IfTrue, Stmt? IfFalse) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+    public record class Module(
+        Uri Uri,
+        List<Stmt> Statements
+    ) : Stmt {
+        public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
+    }
+
     public record class Print(Expr Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Return(Token Keyword, Expr? Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Var(Token Name, Expr? Initializer) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class While(Expr Condition, Stmt Body) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }

@@ -240,7 +240,7 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
 
     Expr Primary() {
         if (MatchAny(NIL, FALSE, TRUE, NUMBER, STRING)) {
-            return Expr.FromToken(Previous());
+            return Expr.Literal.FromToken(Previous());
         } else if (Match(SUPER)) {
             return SuperExpression();
         } else if (Match(THIS)) {
@@ -421,7 +421,7 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         }
         Consume(RIGHT_PAREN, "')' after parameters");
         Consume(LEFT_BRACE, $"'{{' before {functionOrMethod} body");
-        var body = Block();
+        var body = Block().Statements;
         return new Stmt.Function(name, parameters, body);
     }
 
@@ -460,7 +460,10 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         }
     }
 
-    public List<Stmt> Parse() {
+    // TODO: Remove this when TokenList exists
+    private static Source GetSource(IList<Token> tokens1) => tokens1[0].Location.Source;
+
+    public Stmt.Module Parse() {
         var statements = new List<Stmt>();
         try {
             while (Peek().Kind != EOF) {
@@ -470,6 +473,6 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         } catch (Recovery) {
             // To ensure Recovery doesn't leave this file
         }
-        return statements;
+        return new(GetSource(tokens).Uri, statements);
     }
 }

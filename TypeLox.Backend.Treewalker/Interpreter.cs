@@ -30,7 +30,7 @@ class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
 
     // TODO: Split out a compiler class? The front is going to be re-used for different backends
     // ProgrammableCompilingPipeline
-    public List<Stmt> Compile(Source source, IDiagnosticLog log) {
+    public Stmt.Module Compile(Source source, IDiagnosticLog log) {
         // Should we use `out DiagnosticLog log`?
         var tokens = new Scanner(source, log).ScanAll();
         var root = new Parser(tokens, log).Parse();
@@ -62,7 +62,7 @@ class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
         }
         try {
             var env = isolated ? new Env(currentEnvironment) : currentEnvironment;
-            ExecuteBlock(root, env);
+            ExecuteBlock(root.Statements, env);
         } catch (LoxRuntimeException e) {
             Host.WriteLine(e.ToString());
         }
@@ -225,6 +225,13 @@ class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
         } else if (node.IfFalse is Stmt ifFalse) {
             Execute(ifFalse);
         }
+        return null;
+    }
+
+    public object? Visit(Stmt.Module node) {
+        var moduleTopLevel = new Env(currentEnvironment);
+        ExecuteBlock(node.Statements, moduleTopLevel);
+        // TODO: Register module 
         return null;
     }
 

@@ -40,7 +40,7 @@ public sealed class LoxFunction(Stmt.Function decl) : ILoxCallable {
         } // else (copyCount == actualCount == expectedCount) { 👍 }
 
         try {
-            interpreter.ExecuteBlock(decl.Body.Statements, env);
+            interpreter.ExecuteBlock(decl.Statements, env);
         } catch (Return r) {
             return r.Value;
         }
