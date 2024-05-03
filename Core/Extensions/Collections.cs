@@ -9,7 +9,8 @@ public static class CollectionsExtensions {
         }
     }
 
-    public static void AddNotNull<T>(this ICollection<T> self, T? item) {
+    public static void AddNotNull<T>(this ICollection<T> self, T? item)
+    where T : notnull {
         if (item is not null) {
             self.Add(item);
         }

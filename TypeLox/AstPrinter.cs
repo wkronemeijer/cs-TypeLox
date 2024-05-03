@@ -8,7 +8,9 @@ public static class AstNodePrinter {
             } else if (o is string s) {
                 f.Append(s);
             } else if (o is Uri uri) {
-                f.Append(uri.ToString());
+                f.Wrap(AnsiStyle.Underline, delegate {
+                    f.Append(uri.ToString());
+                });
             } else if (o is Token token) {
                 token.FormatLexeme(f);
             } else if (o is AstNode node) {
@@ -53,7 +55,11 @@ public static class AstNodePrinter {
         public Unit Visit(Expr.Call node) => Wrap("call", node.Callee, node.Arguments);
         public Unit Visit(Expr.GetProperty node) => Wrap("get", node.Target, node.Name);
         public Unit Visit(Expr.Grouping node) => Wrap("group", node.Inner);
-        public Unit Visit(Expr.Literal node) => Wrap($"@{node.Value.ToLoxDebugString()}");
+        public Unit Visit(Expr.Literal node) {
+            f.Append('@');
+            f.Append(node.Value.ToLoxDebugString());
+            return unit;
+        }
         public Unit Visit(Expr.Logical node) => Wrap(node.Operator.Lexeme, node.Left, node.Right);
         public Unit Visit(Expr.SetProperty node) => Wrap("set", node.Target, node.Name, node.Value);
         public Unit Visit(Expr.Super node) => Wrap("super", node.Name);
