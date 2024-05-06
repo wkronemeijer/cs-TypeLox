@@ -67,7 +67,7 @@ public abstract record class Expr : AstNode {
     public record class This(Token Keyword) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    public record class Unary(Token Operator, Expr Right) : Expr {
+    public record class Unary(Token Operator, Expr Operand) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
     public record class Variable(Token Name) : Expr {

@@ -189,7 +189,7 @@ public class Scanner(Source source, IDiagnosticLog log) {
     // Fin //
     /////////
 
-    public IList<Token> ScanAll() {
+    public IList<Token> Scan() {
         var tokens = new List<Token>();
         while (IsValid(current)) {
             var item = ScanToken();

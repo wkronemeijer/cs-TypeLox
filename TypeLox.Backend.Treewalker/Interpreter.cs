@@ -11,7 +11,7 @@ public interface IInterpreter : ICompiler {
     public void ExecuteBlock(IList<Stmt> stmts, Env environment);
 }
 
-class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
+public class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
     public string Name => "treewalk";
 
     public ICompilerHost Host { get; }
@@ -30,10 +30,12 @@ class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
 
     // TODO: Split out a compiler class? The front is going to be re-used for different backends
     // ProgrammableCompilingPipeline
-    public Stmt.Module Compile(Source source, IDiagnosticLog log) {
-        // Should we use `out DiagnosticLog log`?
-        var tokens = new Scanner(source, log).ScanAll();
-        var root = new Parser(tokens, log).Parse();
+    private Stmt.Module? Compile(Source source, out IDiagnosticLog log) {
+        log = new DiagnosticLog();
+        var tokens = new Scanner(source, log).Scan();
+        var module = new Parser(tokens, log).Parse();
+        new SyntaxCheck(module, log).Check();
+
         if (options.PrintTokens) {
             Host.WriteLine($"Start of tokens".Header());
             Host.WriteLine(tokens.ToDebugString());
@@ -41,30 +43,25 @@ class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
         }
         if (options.PrintTree) {
             Host.WriteLine($"Start of tree".Header());
-            Host.WriteLine(root.ToDebugString());
+            Host.WriteLine(module.ToDebugString());
             Host.WriteLine($"End of tree".Header());
         }
-        // TODO: Should we return null?
-        // Empty block stmt is valid, but suprising perhaps
-        // Alternative logic can get out of sync, however
-        // Return a CST with a comment saying "compile went awry"
-        return root;
+
+        return log.IsOk ? module : null;
     }
 
     private void Run(Source source, bool isolated) {
         // Idea: configurable run pipeline
-        var log = new DiagnosticLog();
-        var root = Compile(source, log);
-
-        if (!log.IsOk) {
-            Host.WriteLine(log.CreateReport());
-            return;
-        }
-        try {
-            var env = isolated ? new Env(currentEnvironment) : currentEnvironment;
-            ExecuteBlock(root.Statements, env);
-        } catch (LoxRuntimeException e) {
-            Host.WriteLine(e.ToString());
+        var root = Compile(source, out var log);
+        if (root is not null) {
+            try {
+                var env = isolated ? new Env(currentEnvironment) : currentEnvironment;
+                ExecuteBlock(root.Statements, env);
+            } catch (LoxRuntimeException e) {
+                Host.WriteLine(e.ToString());
+            }
+        } else {
+            Host.WriteLine(log.FormatToString().Trim());
         }
     }
 
@@ -176,12 +173,12 @@ class TreeWalkInterpreter : IInterpreter, AstNode.IVisitor<object?> {
     }
 
     public object? Visit(Expr.Unary node) {
-        var right = Evaluate(node.Right);
+        var operand = Evaluate(node.Operand);
         switch (node.Operator.Kind) {
-            case MINUS when right is double number:
+            case MINUS when operand is double number:
                 return -number;
             case BANG:
-                return !right.IsLoxTruthy();
+                return !operand.IsLoxTruthy();
         }
         throw new LoxRuntimeException(node.Operator.Location, "invalid operand");
     }

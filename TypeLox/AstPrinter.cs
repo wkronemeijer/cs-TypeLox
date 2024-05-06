@@ -64,7 +64,7 @@ public static class AstNodePrinter {
         public Unit Visit(Expr.SetProperty node) => Wrap("set", node.Target, node.Name, node.Value);
         public Unit Visit(Expr.Super node) => Wrap("super", node.Name);
         public Unit Visit(Expr.This node) => Wrap("this");
-        public Unit Visit(Expr.Unary node) => Wrap(node.Operator.Lexeme, node.Right);
+        public Unit Visit(Expr.Unary node) => Wrap(node.Operator.Lexeme, node.Operand);
         public Unit Visit(Expr.Variable node) => Wrap("var", node.Name);
 
         public Unit Visit(Stmt.Assert node) => Wrap("assert", node.Expr);
