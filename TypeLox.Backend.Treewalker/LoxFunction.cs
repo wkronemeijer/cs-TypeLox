@@ -1,19 +1,28 @@
 namespace TypeLox.Backend.Treewalker;
 
-public sealed class LoxFunction(Stmt.Function decl) : ILoxCallable {
-    public int Arity => decl.Parameters.Count;
-    public bool IsNative => false;
-    public string Name => decl.Name.Lexeme;
+public sealed class LoxFunction(
+    Stmt.Function decl,
+    Env closure
+) : ILoxCallable {
+    public int Arity { get; } = decl.Parameters.Count;
+    public string Name { get; } = decl.Name.Lexeme;
+
+    static readonly string @this = TokenKind.THIS.GetLexeme();
+
+    public LoxFunction BindThis(LoxInstance instance) {
+        var boundEnv = new Env(closure);
+        boundEnv.Define(@this, instance);
+        return new(decl, boundEnv);
+    }
 
     public object? Call(
-        IInterpreter interpreter,
+        Interpreter interpreter,
         SourceRange location,
         List<object?> arguments
     ) {
-        var env = new Env(); // TODO: This is where the closure goes
-        var expectedCount = Arity;
+        var env = new Env(closure);
+        var expectedCount = Arity; // == decl.Parameters.Count
         var actualCount = arguments.Count;
-
         var copyCount = Math.Min(expectedCount, actualCount);
 
         // Present parameters
@@ -39,11 +48,19 @@ public sealed class LoxFunction(Stmt.Function decl) : ILoxCallable {
             }
         } // else (copyCount == actualCount == expectedCount) { 👍 }
 
+        object? result = null;
         try {
             interpreter.ExecuteBlock(decl.Statements, env);
         } catch (Return r) {
-            return r.Value;
+            result = r.Value;
         }
-        return null;
+
+        if (decl.Kind is FunctionKind.Initializer) {
+            // Get takes a token, because it needs a location for the runtime exception
+            // GetAt fails with a general Exception
+            return closure.GetAt(@this, 0);
+        } else {
+            return result;
+        }
     }
 }

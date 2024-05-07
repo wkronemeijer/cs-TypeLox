@@ -1,0 +1,17 @@
+fun createCounter() {
+    var i = 0;
+    fun counter() {
+        var result = i;
+        i = i + 1;
+        return result;
+    }
+    return counter;
+}
+
+var f = createCounter();
+assert f() == 0;
+assert f() == 1;
+assert f() == 2;
+f = createCounter();
+assert f() == 0;
+assert f() == 1;

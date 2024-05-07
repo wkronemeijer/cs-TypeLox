@@ -11,9 +11,9 @@ public sealed class Env(Env? parent) {
     // TODO: Replace object? with an entry to support something like immutable variables
     private readonly Dictionary<string, object?> values = [];
 
-    private static LoxRuntimeException UndefinedVariableException(Token name) {
-        return new(name.Location, $"undefined variable '{name.Lexeme}'");
-    }
+    private static LoxRuntimeException UndefinedVariableException(
+        Token name
+    ) => new(name.Location, $"undefined variable '{name.Lexeme}'");
 
     public void Define(string name, object? value) {
         // TODO: Check if it already exists?
@@ -40,5 +40,27 @@ public sealed class Env(Env? parent) {
         } else {
             throw UndefinedVariableException(name);
         }
+    }
+
+    Env GetAncestor(int depth) {
+        var cursor = this;
+        for (var i = 0; i < depth; i++) {
+            if (cursor.Parent is Env parent) {
+                cursor = parent;
+            } else {
+                throw new Exception($"ancestor is not deep enough");
+            }
+        }
+        return cursor;
+    }
+
+    public object? GetAt(string name, int depth) {
+        return GetAncestor(depth).values[name];
+    }
+
+    public object? GetAt(Token name, int depth) => GetAt(name.Lexeme, depth);
+
+    public void AssignAt(Token name, int depth, object? value) {
+        GetAncestor(depth).values[name.Lexeme] = value;
     }
 }

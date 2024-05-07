@@ -27,16 +27,15 @@ public class CompilerHost(CompilerOptions options) : ICompilerHost {
     public Uri GetCurrentDirectory() => Environment.CurrentDirectory.ToFileUri();
 
     public Source ReadFile(Uri uri) {
-        // TODO: This is where CompilerHost comes into play
         var code = File.ReadAllText(uri.ToFilePath(), Encoding.UTF8);
         return new Source(uri, code);
     }
 
-    public List<Source> FindTestFiles() =>
+    public List<Source> FindTestFiles() => (
         Directory.EnumerateFiles(".", "*.test.lox", SearchOption.AllDirectories)
         .Select(file => ReadFile(file.ToFileUri()))
         .ToList()
-    ;
+    );
 
     public void WriteLine(string s) => Console.WriteLine(s);
     public void WriteLine() => Console.WriteLine();

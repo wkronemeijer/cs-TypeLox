@@ -87,10 +87,14 @@ public static class AstNodePrinter {
         }
     }
 
+    public static void Format(this AstNode node, IFormatter f) {
+        node.Accept(new Visitor(f));
+    }
+
     public static string ToDebugString(this AstNode node) {
-        var formatter = new Formatter();
-        node.Accept(new Visitor(formatter));
-        return formatter.ToString().Trim();
+        var f = new Formatter();
+        node.Format(f);
+        return f.ToString().Trim();
     }
 
     // Very tempting still to add a SourceFile node type

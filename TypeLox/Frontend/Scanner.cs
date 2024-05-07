@@ -2,13 +2,19 @@ namespace TypeLox;
 
 using static TokenKind;
 
-// TODO: C# uses WTF-16, make it work with 😂s
-public class Scanner(Source source, IDiagnosticLog log) {
-    private readonly string sourceText = source.Code;
+public sealed class Scanner {
+    private readonly Source source;
+    private readonly DiagnosticList diagnostics;
+    private readonly string sourceText;
 
-    // TODO: Maybe reset?
     private int start = 0;
     private int current = 0;
+
+    private Scanner(Source source, DiagnosticList diagnostics) {
+        this.source = source;
+        this.diagnostics = diagnostics;
+        sourceText = source.Code;
+    }
 
     ///////////////
     // Utilities //
@@ -73,15 +79,11 @@ public class Scanner(Source source, IDiagnosticLog log) {
         return IsAsciiDigit(c) || IsAsciiAlpha(c);
     }
 
-    static readonly Dictionary<string, TokenKind> keywords;
+    static readonly Dictionary<string, TokenKind> keywords = [];
     static Scanner() {
-        keywords = [];
-
         foreach (var kind in Enum.GetValues<TokenKind>()) {
             if (kind.GetIsKeyword()) {
-                var name = Enum.GetName(kind);
-                Assert(name is not null);
-                keywords[name.ToLowerInvariant()] = kind;
+                keywords[kind.GetLexeme()] = kind;
             }
         }
     }
@@ -102,7 +104,7 @@ public class Scanner(Source source, IDiagnosticLog log) {
     Token? ContinueString() {
         AdvanceUntil('"');
         if (IsAtEnd) {
-            log.Error(CurrentLocation, "unterminated string");
+            diagnostics.AddError(CurrentLocation, "unterminated string");
             return null;
         } else {
             Advance();
@@ -178,18 +180,15 @@ public class Scanner(Source source, IDiagnosticLog log) {
                 } else if (IsAsciiAlpha(c)) {
                     return ContinueIdentifierOrKeyword();
                 } else {
-                    log.Error(CurrentLocation, $"unexpected character '{c}' (U+{(ushort)c:X4})");
+                    // TODO: check for surrogates
+                    diagnostics.AddError(CurrentLocation, $"unexpected character '{c}' (U+{(ushort)c:X4})");
                     return null;
                 }
             }
         }
     }
 
-    /////////
-    // Fin //
-    /////////
-
-    public IList<Token> Scan() {
+    List<Token> ScanAllTokens() {
         var tokens = new List<Token>();
         while (IsValid(current)) {
             var item = ScanToken();
@@ -199,4 +198,13 @@ public class Scanner(Source source, IDiagnosticLog log) {
         tokens.Add(CreateToken(EOF));
         return tokens;
     }
+
+    /////////
+    // Fin //
+    /////////
+
+    public static List<Token> Scan(
+        Source source,
+        DiagnosticList diagnostics
+    ) => new Scanner(source, diagnostics).ScanAllTokens();
 }

@@ -1,18 +1,15 @@
 namespace TypeLox.Cli;
 
 public sealed class TestRunner(
-    // Should we create a new interpreter for each test?
-    // Maybe we should instead add a runIsolated flag (or the opposite)
-    // to select between variants
-    ICompiler compiler,
+    IInterpreter interpreter,
     IList<Source> sources
 ) : IDisplay {
     private readonly TestResultCounter tally = new();
-    private readonly DiagnosticLog diagnostics = [];
+    private readonly DiagnosticList diagnostics = [];
 
     private void RunTest(Source source) {
         try {
-            compiler.RunAsModule(source);
+            interpreter.Run(source);
             tally.Add(TestResult.Success);
         } catch (LoxException e) {
             diagnostics.Add(e.ToDiagnostic());
@@ -21,10 +18,8 @@ public sealed class TestRunner(
     }
 
     public void RunAllTests() {
-        foreach (var source in sources) {
-            RunTest(source);
-        }
-        compiler.Host.WriteLine(this.FormatToString().Trim());
+        foreach (var s in sources) { RunTest(s); }
+        interpreter.Host.WriteLine(this.FormatToString().Trim());
     }
 
     private void FormatResult(IFormatter f) {

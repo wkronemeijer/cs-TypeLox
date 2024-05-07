@@ -1,20 +1,19 @@
 ﻿namespace TypeLox.Cli;
 
-using TypeLox.Backend.Treewalker;
-
 public class Program(ICompiler compiler) : ProgramMode.IVisitor {
     private static ICompiler SelectBackend(ICompilerHost host, ProgramOptions options) => options.Backend switch {
-        null => new TreeWalkInterpreter(host),
+        null => new Backend.Treewalker.Interpreter(host),
         _ => throw new Exception($"unknown backend '{options.Backend}'"),
     };
 
     public void Visit(ProgramMode.Repl command) {
+        var interpreter = compiler.Upgrade();
         while (true) {
             try {
                 Console.Write("> ");
                 var line = Console.ReadLine();
                 if (line is null or ".exit") { break; }
-                compiler.RunLine(line);
+                interpreter.RunLine(line);
             } catch (LoxException e) {
                 Console.Error.WriteLine(e.ToString());
             }
@@ -22,16 +21,21 @@ public class Program(ICompiler compiler) : ProgramMode.IVisitor {
     }
 
     public void Visit(ProgramMode.ExecuteFile command) {
+        var interpreter = compiler.Upgrade();
         try {
-            compiler.RunFile(command.FileUri);
+            interpreter.RunFile(command.FileUri);
         } catch (LoxException e) {
             Console.Error.WriteLine(e.ToString());
         }
     }
 
+    // TODO: Add compile to file mode
+    // Funny to see how disjoint the feature sets between interpreter and transpiler really is
+
     public void Visit(ProgramMode.TestDirectory value) {
-        var sources = compiler.Host.FindTestFiles();
-        var runner = new TestRunner(compiler, sources);
+        var interpreter = compiler.Upgrade();
+        var sources = interpreter.Host.FindTestFiles();
+        var runner = new TestRunner(interpreter, sources);
         Console.WriteLine($"running {sources.Count} test(s)");
         runner.RunAllTests();
     }

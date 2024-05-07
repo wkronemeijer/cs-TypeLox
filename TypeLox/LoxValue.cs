@@ -5,7 +5,6 @@ using TypeLox.Backend.Treewalker;
 // Unfortunately, `using LoxValue = object?` doesn't work
 // Wrapping it in a struct all the time didn't see like a good idea either.
 
-
 public static class LoxValueObjectExtensions {
     public static bool CanBeLoxValue(this object? value) => value switch {
         null => true,
@@ -35,6 +34,8 @@ public static class LoxValueObjectExtensions {
         bool => "boolean",
         double => "number",
         string => "string",
+        // TODO: put class first
+        ILoxCallable => "function",
         _ => throw new ArgumentException($"{value} is not a valid Lox value"),
     };
 
@@ -43,7 +44,7 @@ public static class LoxValueObjectExtensions {
         bool b => b ? "true" : "false",
         double d => d.ToString(),
         string s => s,
-        ILoxCallable c => $"<{(c.IsNative ? "native" : "")}fn {c.Name}>",
+        ILoxCallable c => $"<fn {c.Name}>",
         _ => value.ToString() ?? "<err>",
     };
 

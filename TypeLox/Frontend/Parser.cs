@@ -3,21 +3,29 @@ namespace TypeLox;
 using static TokenKind;
 
 public enum FunctionKind {
-    None,
     Function,
     Initializer,
     Method,
 }
 
 public enum ClassKind {
-    None,
     Class,
     SubClass,
 }
 
 // TODO: Try out a Pratt Parser
-public class Parser(IList<Token> tokens, IDiagnosticLog log) {
+public sealed class Parser {
+    private const string INITIALIZER_NAME = "init";
+
+    private readonly List<Token> tokens;
+    private readonly DiagnosticList diagnostics;
+
     private int current = 0;
+
+    private Parser(List<Token> tokens, DiagnosticList diagnostics) {
+        this.tokens = tokens;
+        this.diagnostics = diagnostics;
+    }
 
     ///////////////
     // Utilities //
@@ -77,13 +85,13 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         return false;
     }
 
-    private class Recovery() : Exception {
-        public static readonly Recovery start = new();
+    private class Recovery() : Exception() {
+        public static Recovery Instance { get; } = new();
     }
 
     Recovery Error(string message, SourceRange? location = null) {
-        log.Error(location ?? Peek().Location, message);
-        return Recovery.start;
+        diagnostics.AddError(location ?? Peek().Location, message);
+        return Recovery.Instance;
     }
 
     static bool CanSynchronizeAfter(TokenKind self) => self switch {
@@ -407,7 +415,6 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
     }
 
     Stmt.Function FunctionDeclaration(FunctionKind kind) {
-        Requires(kind is not FunctionKind.None);
         var functionOrMethod = kind.ToString().ToLowerInvariant();
         var name = Consume(IDENTIFIER, $"{functionOrMethod} name");
         Consume(LEFT_PAREN, $"'(' after {functionOrMethod} name");
@@ -422,7 +429,10 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         Consume(RIGHT_PAREN, "')' after parameters");
         Consume(LEFT_BRACE, $"'{{' before {functionOrMethod} body");
         var body = Block().Statements;
-        return new Stmt.Function(name, parameters, body);
+        if (kind is FunctionKind.Method && name.Lexeme == INITIALIZER_NAME) {
+            kind = FunctionKind.Initializer;
+        }
+        return new Stmt.Function(kind, name, parameters, body);
     }
 
     Stmt.Class ClassDeclaration() {
@@ -461,9 +471,9 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
     }
 
     // TODO: Remove this when TokenList exists
-    private static Source GetSource(IList<Token> tokens1) => tokens1[0].Location.Source;
+    static Source GetSource(IList<Token> tokens) => tokens[0].Location.Source;
 
-    public Stmt.Module Parse() {
+    Stmt.Module ParseFile() {
         var statements = new List<Stmt>();
         try {
             while (Peek().Kind != EOF) {
@@ -473,6 +483,12 @@ public class Parser(IList<Token> tokens, IDiagnosticLog log) {
         } catch (Recovery) {
             // To ensure Recovery doesn't leave this file
         }
-        return new(GetSource(tokens).Uri, statements);
+        var source = GetSource(tokens);
+        return new(ModuleKind.SourceFile, source.Uri, statements);
     }
+
+    public static Stmt.Module Parse(
+        List<Token> tokens,
+        DiagnosticList diagnostics
+    ) => new Parser(tokens, diagnostics).ParseFile();
 }

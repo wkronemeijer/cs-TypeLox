@@ -55,12 +55,24 @@ public enum TokenKind {
 }
 
 public static class TokenKindMethods {
-    //                                            = BIG
+    //                                   = BIG
     private const TokenKind firstKeyword = IF;
     private const TokenKind lastKeyword = TRUE;
 
-    public static bool GetIsKeyword(this TokenKind self) =>
+    public static bool GetIsKeyword(this TokenKind self) => (
         (int)firstKeyword <= (int)self &&
         (int)self <= (int)lastKeyword
-    ;
+    );
+
+    public static string GetLexeme(this TokenKind self) {
+        if (Enum.GetName(self) is string name) {
+            if (self.GetIsKeyword()) {
+                return name.ToLowerInvariant();
+            } else {
+                throw new Exception($"{name} is not a keyword");
+            }
+        } else {
+            throw new Exception($"no name for {self}");
+        }
+    }
 }

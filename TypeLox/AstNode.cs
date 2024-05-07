@@ -35,19 +35,24 @@ public abstract record class Expr : AstNode {
     public record class Assign(Token Name, Expr Value) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Binary(Expr Left, Token Operator, Expr Right) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Call(Expr Callee, Token Paren, List<Expr> Arguments) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class GetProperty(Expr Target, Token Name) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
-    // CST needs this, but AST doesn't
+
+    // Needed to disallow `(variable) = 10;` (note that C allows this)
     public record class Grouping(Expr Inner) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Literal(object? Value) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
 
@@ -55,21 +60,27 @@ public abstract record class Expr : AstNode {
             return new(token.GetNativeValue());
         }
     }
+
     public record class Logical(Expr Left, Token Operator, Expr Right) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class SetProperty(Expr Target, Token Name, Expr Value) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Super(Token Keyword, Token Name) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class This(Token Keyword) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Unary(Token Operator, Expr Operand) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Variable(Token Name) : Expr {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
@@ -79,17 +90,21 @@ public abstract record class Stmt() : AstNode {
     public record class Assert(Token Keyword, Expr Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Block(List<Stmt> Statements) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Class(Token Name, Expr.Variable? Superclass, List<Function> Methods) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Expression(Expr Expr) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
 
     public record class Function(
+        FunctionKind Kind,
         Token Name,
         List<Token> Parameters,
         List<Stmt> Statements
@@ -100,7 +115,9 @@ public abstract record class Stmt() : AstNode {
     public record class If(Expr Condition, Stmt IfTrue, Stmt? IfFalse) : Stmt {
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
+
     public record class Module(
+        ModuleKind Kind,
         Uri Uri,
         List<Stmt> Statements
     ) : Stmt {

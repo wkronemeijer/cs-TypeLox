@@ -1,41 +1,39 @@
 namespace TypeLox;
 
-// TODO: Should we add a type parameter for intermediate results?
-// Otherwise Run/CompileAndRun remains
+// TODO: Technically this should output a TCompileResult, which : ICompileResult, which is essentially a wrapper around a string
+// running code in-memory is already a funny feature
+// 3 stages:
+// output to file
+// run file
+// run lines
+
 public interface ICompiler {
     /// <summary>
     /// Descriptive name for this backend.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
-    IEnumerable<string> GetAliases() { yield break; }
+    public IEnumerable<string> GetAliases() { yield break; }
 
     /// <summary>
     /// Host environment, which provides file system and output abstraction.
     /// </summary>
-    ICompilerHost Host { get; }
+    public ICompilerHost Host { get; }
 
-    /// <summary>
-    /// Runs a piece of source code in an isolated environment.
-    /// </summary>
-    void RunAsModule(Source source);
+    public Stmt.Module? Compile(Source source, DiagnosticList diagnostics);
 
-    /// <summary>
-    /// Runs a piece of source code in a the shared, global environment.
-    /// </summary>
-    void RunAsScript(Source source);
-
-    /// <summary>
-    /// Runs a source file.
-    /// </summary>
-    void RunFile(Uri uri) {
-        RunAsModule(Host.ReadFile(uri));
+    public IInterpreter Upgrade() {
+        if (this is IInterpreter interpreter) {
+            return interpreter;
+        } else {
+            throw new Exception($"backend {Name} does not support interpreter mode");
+        }
     }
+}
 
-    /// <summary>
-    /// Runs an indepedent snippet of code.
-    /// </summary>
-    void RunLine(string snippet) {
-        RunAsScript(Source.FromString(snippet));
-    }
+public interface IInterpreter : ICompiler {
+    public void Run(Source source);
+
+    public void RunFile(Uri uri) => Run(Host.ReadFile(uri));
+    public void RunLine(string snippet) => Run(Source.FromString(snippet) with { CameFromRepl = true });
 }

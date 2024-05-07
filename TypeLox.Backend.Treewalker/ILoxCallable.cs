@@ -6,8 +6,6 @@ public interface ILoxCallable {
     /// </summary>
     public int Arity { get; }
 
-    public bool IsNative { get; }
-
     public string Name { get; }
 
     /// <summary>
@@ -16,7 +14,7 @@ public interface ILoxCallable {
     /// <param name="arguments"></param>
     /// <returns></returns>
     public object? Call(
-        IInterpreter interpreter,
+        Interpreter interpreter,
         SourceRange location,
         List<object?> arguments
     );
