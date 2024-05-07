@@ -75,6 +75,7 @@ public sealed class ArgsParser(string[] args) {
             Action = delegate {
                 options.CompilerOptions.PrintTokens = true;
                 options.CompilerOptions.PrintTree = true;
+                options.CompilerOptions.PrintLocals = true;
             },
             HelpText = "Print tokens and the tree.",
         });

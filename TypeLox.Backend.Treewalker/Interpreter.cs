@@ -28,8 +28,6 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         // TODO: Skip check if parsing failed
         var locals = Resolver.Resolve(module, sourceDiagnostics);
 
-        Host.WriteLine(locals.FormatToString().Trim());
-
         if (options.PrintTokens) {
             Host.WriteLine($"Start of tokens".Header());
             Host.WriteLine(tokens.ToDebugString());
@@ -40,6 +38,12 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
             Host.WriteLine($"Start of tree".Header());
             Host.WriteLine(module.ToDebugString());
             Host.WriteLine($"End of tree".Header());
+        }
+
+        if (options.PrintLocals) {
+            Host.WriteLine($"Start of locals".Header());
+            Host.WriteLine(locals.FormatToString().Trim());
+            Host.WriteLine($"End of locals".Header());
         }
 
         allDiagnostics.AddAll(sourceDiagnostics);
