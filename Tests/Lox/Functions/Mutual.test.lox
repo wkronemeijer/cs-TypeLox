@@ -1,14 +1,14 @@
 // TODO: Use the name directly
-// (this requires variable hoisting)
+// (this requires variable hoisting with the current file module implementation)
 
 var mutualA;
 var mutualB;
 
-fun Aimpl(x) {
+fun mutualA_impl(x) {
     return mutualB(x - 1);
 }
 
-fun Bimpl(y) {
+fun mutualB_impl(y) {
     if (y > 0) {
         return mutualA(y - 1);
     } else {
@@ -16,8 +16,8 @@ fun Bimpl(y) {
     }
 }
 
-mutualA = Aimpl;
-mutualB = Bimpl;
+mutualA = mutualA_impl;
+mutualB = mutualB_impl;
 
 assert mutualB(10) == 0;
 assert mutualB(11) == -1;

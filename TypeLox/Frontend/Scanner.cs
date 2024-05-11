@@ -64,16 +64,15 @@ public sealed class Scanner {
         return new Token(kind, CurrentLocation);
     }
 
-    static bool IsAsciiDigit(char c) {
-        return '0' <= c && c <= '9';
-    }
+    static bool IsAsciiDigit(char c) => (
+        '0' <= c && c <= '9'
+    );
 
-    static bool IsAsciiAlpha(char c) {
-        return
-            'A' <= c && c <= 'Z' ||
-            'a' <= c && c <= 'z'
-        ;
-    }
+    static bool IsAsciiAlpha(char c) => (
+        'A' <= c && c <= 'Z' ||
+        'a' <= c && c <= 'z' ||
+        c == '_'
+    );
 
     static bool IsAsciiAlphaNum(char c) {
         return IsAsciiDigit(c) || IsAsciiAlpha(c);
