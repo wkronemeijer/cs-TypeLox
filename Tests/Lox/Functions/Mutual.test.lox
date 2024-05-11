@@ -1,0 +1,24 @@
+// TODO: Use the name directly
+// (this requires variable hoisting)
+
+var mutualA;
+var mutualB;
+
+fun Aimpl(x) {
+    return mutualB(x - 1);
+}
+
+fun Bimpl(y) {
+    if (y > 0) {
+        return mutualA(y - 1);
+    } else {
+        return y;
+    }
+}
+
+mutualA = Aimpl;
+mutualB = Bimpl;
+
+assert mutualB(10) == 0;
+assert mutualB(11) == -1;
+assert mutualB(12) == 0;
