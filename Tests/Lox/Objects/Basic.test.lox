@@ -1,0 +1,11 @@
+class Greeter {
+    init(name) {
+        this.name = name;
+    }
+    
+    createGreeting() {
+        return "Hello, " + this.name + "!";
+    }
+}
+
+assert Greeter("world").createGreeting() == "Hello, world!";

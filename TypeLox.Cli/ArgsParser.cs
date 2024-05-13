@@ -77,7 +77,7 @@ public sealed class ArgsParser(string[] args) {
                 options.CompilerOptions.PrintTree = true;
                 options.CompilerOptions.PrintLocals = true;
             },
-            HelpText = "Print tokens and the tree.",
+            HelpText = "Print all debug information.",
         });
 
         DefineFlag(new() {
@@ -102,7 +102,15 @@ public sealed class ArgsParser(string[] args) {
                 options.CompilerOptions.AllowUnderApplication = true;
                 options.CompilerOptions.AllowOverApplication = true;
             },
-            HelpText = "Print the tree after parsing.",
+            HelpText = "Allow over- and under-application.",
+        });
+
+        DefineFlag(new() {
+            Name = "UpgradeAssert",
+            Action = delegate {
+                options.CompilerOptions.TrackEvaluation = true;
+            },
+            HelpText = "Improve assertion failure messages.",
         });
 
         ProcessArgs();
@@ -124,6 +132,14 @@ public sealed class ArgsParser(string[] args) {
     public static (ProgramMode, ProgramOptions) Parse(string[] args) {
         var parser = new ArgsParser(args);
         var mode = parser.Parse();
-        return (mode, parser.options);
+        var options = parser.options;
+
+        if (mode is ProgramMode.TestDirectory) {
+            var compilerOptions = options.CompilerOptions;
+            compilerOptions.TrackEvaluation ??= true;
+            compilerOptions.DisablePrint ??= true;
+        }
+
+        return (mode, options);
     }
 }

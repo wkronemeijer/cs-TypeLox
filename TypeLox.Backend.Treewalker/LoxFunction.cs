@@ -32,7 +32,7 @@ public sealed class LoxFunction(
         }
 
         if (copyCount < expectedCount) {
-            if (!interpreter.Host.Options.AllowUnderApplication) {
+            if (interpreter.Host.Options.AllowUnderApplication is not true) {
                 throw new LoxRuntimeException(location,
                     $"too few arguments for {this.ToLoxString()}"
                 );
@@ -42,7 +42,7 @@ public sealed class LoxFunction(
                 env.Define(decl.Parameters[j].Lexeme, null);
             }
         } else if (copyCount < actualCount) {
-            if (!interpreter.Host.Options.AllowOverApplication) {
+            if (interpreter.Host.Options.AllowOverApplication is not true) {
                 throw new LoxRuntimeException(location,
                     $"too many arguments for {this.ToLoxString()}"
                 );

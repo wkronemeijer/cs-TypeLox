@@ -8,6 +8,10 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     private readonly Env globalEnv = new();
     private Env currentEnv;
 
+    private readonly Dictionary<Expr, object?> valueByExpr = new(
+        ReferenceEqualityComparer.Instance
+    );
+
     public ICompilerHost Host { get; }
     public string Name => "treewalk";
 
@@ -29,7 +33,7 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
 
         var tokens = Scanner.Scan(source, sourceDiagnostics);
         if (!sourceDiagnostics.IsOk) { goto fail; }
-        if (options.PrintTokens) {
+        if (options.PrintTokens is true) {
             Host.WriteLine($"Start of tokens".Header());
             Host.WriteLine(tokens.ToDebugString());
             Host.WriteLine($"End of tokens".Header());
@@ -37,7 +41,7 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
 
         var module = Parser.Parse(tokens, sourceDiagnostics);
         if (!sourceDiagnostics.IsOk) { goto fail; }
-        if (options.PrintTree) {
+        if (options.PrintTree is true) {
             Host.WriteLine($"Start of tree".Header());
             Host.WriteLine(module.ToDebugString());
             Host.WriteLine($"End of tree".Header());
@@ -45,7 +49,7 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
 
         var locals = Resolver.Resolve(module, sourceDiagnostics);
         if (!sourceDiagnostics.IsOk) { goto fail; }
-        if (options.PrintLocals) {
+        if (options.PrintLocals is true) {
             Host.WriteLine($"Start of locals".Header());
             Host.WriteLine(locals.FormatToString().Trim());
             Host.WriteLine($"End of locals".Header());
@@ -77,8 +81,19 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     // Interpreting //
     //////////////////
 
-    public object? Evaluate(Expr expr) => expr.Accept(this);
-    public void Execute(Stmt stmt) => stmt.Accept(this);
+    public object? Evaluate(Expr expr) {
+        var value = expr.Accept(this);
+        if (options.TrackEvaluation is true) {
+            valueByExpr[expr] = value;
+        }
+        return value;
+    }
+
+    public void Execute(Stmt stmt) {
+        valueByExpr.Clear();
+        stmt.Accept(this);
+        // Clearing after would accumulate 
+    }
 
     public void ExecuteBlock(IEnumerable<Stmt> stmts, Env temporaryEnv) {
         var oldEnv = currentEnv;
@@ -98,6 +113,27 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         } else {
             return globalEnv.Get(name);
         }
+    }
+
+    string FindFailureReason(Expr expr) {
+        object? actual = valueByExpr[expr];
+        Requires(actual.IsLoxTruthy() is false);
+        object? expected = true;
+        if (
+            expr is Expr.Binary binary &&
+            binary.Operator.Kind is EQUAL_EQUAL
+        ) {
+            var left = binary.Left;
+            var right = binary.Right;
+            if (left is Expr.Literal) {
+                expected = valueByExpr[left];
+                actual = valueByExpr[right];
+            } else if (right is Expr.Literal) {
+                actual = valueByExpr[left];
+                expected = valueByExpr[right];
+            }
+        }
+        return $"received {actual.ToLoxDebugString()}, expected {expected.ToLoxDebugString()}";
     }
 
     /////////////////
@@ -248,16 +284,21 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     }
 
     public object? Visit(Stmt.Assert node) {
-        var value = Evaluate(node.Expr);
+        var expr = node.Expr;
+        var value = Evaluate(expr);
         if (!value.IsLoxTruthy()) {
-            throw new LoxRuntimeException(node.Keyword.Location, "assertion failed");
+            throw new LoxRuntimeException(node.Keyword.Location,
+                $"assertion failed: {FindFailureReason(expr)}"
+            );
         }
         return null;
     }
 
     public object? Visit(Stmt.Print node) {
         var value = Evaluate(node.Expr);
-        Host.WriteLine(value.ToLoxString());
+        if (options.DisablePrint is not true) {
+            Host.WriteLine(value.ToLoxString());
+        }
         return null;
     }
 
