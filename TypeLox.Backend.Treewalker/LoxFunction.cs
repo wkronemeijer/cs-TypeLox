@@ -4,6 +4,7 @@ public sealed class LoxFunction(
     Stmt.Function decl,
     Env closure
 ) : ILoxCallable {
+    public FunctionKind Kind { get; } = decl.Kind;
     public int Arity { get; } = decl.Parameters.Count;
     public string Name { get; } = decl.Name.Lexeme;
 

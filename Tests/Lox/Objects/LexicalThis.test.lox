@@ -1,0 +1,17 @@
+class Person {
+    init(name) {
+        this.name = name;
+    }
+    
+    createGreeter(middle) {
+        fun greeter(suffix) {
+            // Apparently allowed in Lox
+            // Makes sense why this is now bound like a variable for methods
+            return this.name + " " + middle + " " + suffix;
+        }
+        return greeter;
+    }
+}
+
+var response = Person("object").createGreeter("closure")("param");
+assert response == "object closure param";

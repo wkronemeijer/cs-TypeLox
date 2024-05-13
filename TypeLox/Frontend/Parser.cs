@@ -443,7 +443,7 @@ public sealed class Parser {
             Consume(IDENTIFIER, "superclass name");
             superclass = new Expr.Variable(Previous());
         }
-
+        Consume(LEFT_BRACE, "opening brace at the start of class body");
         var methods = new List<Stmt.Function>();
         while (!Check(RIGHT_BRACE) && !IsAtEnd) {
             methods.Add(FunctionDeclaration(FunctionKind.Method));

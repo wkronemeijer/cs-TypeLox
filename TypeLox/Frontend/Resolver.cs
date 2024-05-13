@@ -89,6 +89,22 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
         }
     }
 
+    void ResolveFunction(Stmt.Function node) {
+        var old = Replace(ref currentFunction, node.Kind);
+        {
+            BeginScope();
+            {
+                foreach (var param in node.Parameters) {
+                    Declare(param);
+                    Define(param);
+                }
+                Resolve(node.Statements);
+            }
+            EndScope();
+        }
+        currentFunction = old;
+    }
+
     ////////////////
     // : IVisitor //
     ////////////////
@@ -127,12 +143,12 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
         return unit;
     }
 
-    public Unit Visit(Expr.GetProperty node) {
-        throw new NotImplementedException();
-    }
+    public Unit Visit(Expr.GetProperty node) => Resolve(node.Target);
 
     public Unit Visit(Expr.SetProperty node) {
-        throw new NotImplementedException();
+        Resolve(node.Target);
+        Resolve(node.Value);
+        return unit;
     }
 
     public Unit Visit(Expr.Grouping node) => Resolve(node.Inner);
@@ -150,67 +166,20 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
     }
 
     public Unit Visit(Expr.This node) {
-        throw new NotImplementedException();
+        if (currentClass is null) {
+            diagnostics.AddError(node.Keyword.Location,
+                $"cannot access this outside of methods"
+            );
+            // TODO: Allow this to be global?
+            // Then again, globalThis has caused no amount of pain
+        }
+        ResolveLocal(node, node.Keyword);
+        return unit;
     }
 
     public Unit Visit(Expr.Unary node) => Resolve(node.Operand);
 
     public Unit Visit(Stmt.Assert node) => Resolve(node.Expr);
-
-    public Unit Visit(Stmt.Block node) {
-        using (Scope()) {
-            Resolve(node.Statements);
-        }
-        return unit;
-    }
-
-    public Unit Visit(Stmt.Class node) {
-        var old = Replace(ref currentClass, ClassKind.Class);
-        {
-            Declare(node.Name);
-            Define(node.Name);
-        }
-        currentClass = old;
-        return unit;
-    }
-
-    public Unit Visit(Stmt.Expression node) => Resolve(node.Expr);
-
-    public Unit Visit(Stmt.Function node) {
-        var old = Replace(ref currentFunction, node.Kind);
-        {
-            Declare(node.Name);
-            Define(node.Name);
-            BeginScope();
-            {
-                foreach (var param in node.Parameters) {
-                    Declare(param);
-                    Define(param);
-                }
-                Resolve(node.Statements);
-            }
-            EndScope();
-        }
-        currentFunction = old;
-        return unit;
-    }
-
-    public Unit Visit(Stmt.If node) {
-        Resolve(node.Condition);
-        Resolve(node.IfTrue);
-        if (node.IfFalse is Stmt ifFalse) {
-            Resolve(ifFalse);
-        }
-        return unit;
-    }
-
-    public Unit Visit(Stmt.Module node) {
-        var isolate = node.Kind.IsIsolated();
-        if (isolate) { BeginScope(); }
-        Resolve(node.Statements);
-        if (isolate) { EndScope(); }
-        return unit;
-    }
 
     public Unit Visit(Stmt.Print node) => Resolve(node.Expr);
 
@@ -224,6 +193,30 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
         return unit;
     }
 
+    public Unit Visit(Stmt.Block node) {
+        using (Scope()) {
+            Resolve(node.Statements);
+        }
+        return unit;
+    }
+
+    public Unit Visit(Stmt.Expression node) => Resolve(node.Expr);
+
+    public Unit Visit(Stmt.If node) {
+        Resolve(node.Condition);
+        Resolve(node.IfTrue);
+        if (node.IfFalse is Stmt ifFalse) {
+            Resolve(ifFalse);
+        }
+        return unit;
+    }
+
+    public Unit Visit(Stmt.While node) {
+        Resolve(node.Condition);
+        Resolve(node.Body);
+        return unit;
+    }
+
     public Unit Visit(Stmt.Var node) {
         Declare(node.Name);
         if (node.Initializer is Expr init) {
@@ -233,9 +226,42 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
         return unit;
     }
 
-    public Unit Visit(Stmt.While node) {
-        Resolve(node.Condition);
-        Resolve(node.Body);
+    public Unit Visit(Stmt.Function node) {
+        Declare(node.Name);
+        Define(node.Name);
+        ResolveFunction(node);
+        return unit;
+    }
+
+    public Unit Visit(Stmt.Class node) {
+        var kind = (node.Superclass is null ?
+            ClassKind.Class :
+            ClassKind.SubClass
+        );
+        var old = Replace(ref currentClass, kind);
+        {
+            Declare(node.Name);
+            BeginScope();
+            {
+                scopes.Peek()["super"] = VariableState.Defined;
+                scopes.Peek()["this"] = VariableState.Defined;
+
+                foreach (var stmt in node.Methods) {
+                    ResolveFunction(stmt);
+                }
+            }
+            EndScope();
+            Define(node.Name);
+        }
+        currentClass = old;
+        return unit;
+    }
+
+    public Unit Visit(Stmt.Module node) {
+        var isolate = node.Kind.IsIsolated();
+        if (isolate) { BeginScope(); }
+        Resolve(node.Statements);
+        if (isolate) { EndScope(); }
         return unit;
     }
 
