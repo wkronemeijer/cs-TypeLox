@@ -1,0 +1,12 @@
+assert true;
+assert !false;
+
+assert !(false and false);
+assert !(false and true);
+assert !(true and false);
+assert true and true;
+
+assert !(false or false);
+assert false or true;
+assert true or false;
+assert true or true;

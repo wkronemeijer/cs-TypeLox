@@ -1,0 +1,9 @@
+var i = 0;
+fun sideEffect() {
+    i = i + 1;
+}
+
+sideEffect();
+false and sideEffect();
+true or sideEffect();
+assert i == 1;

@@ -196,7 +196,19 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     }
 
     public object? Visit(Expr.Logical node) {
-        throw new NotImplementedException();
+        var left = Evaluate(node.Left);
+        var leftIsTruthy = left.IsLoxTruthy();
+
+        switch (node.Operator.Kind) {
+            case AND:
+                return leftIsTruthy ? Evaluate(node.Right) : left;
+            case OR:
+                return leftIsTruthy ? left : Evaluate(node.Right);
+        }
+        throw new LoxRuntimeException(
+            node.Operator.Location,
+            $"unsupported operation: ? {node.Operator.Lexeme} ?"
+        );
     }
 
     public object? Visit(Expr.Assign node) {
