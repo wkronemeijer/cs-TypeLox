@@ -180,8 +180,8 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
                 return l >= r;
 
             // String
-            case PLUS when left is string l && right is string r:
-                return l + r;
+            case PLUS when left is string || right is string:
+                return left.ToLoxString() + right.ToLoxString();
 
             // Any
             case EQUAL_EQUAL:
