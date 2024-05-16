@@ -3,12 +3,14 @@ namespace TypeLox;
 using static TokenKind;
 
 public sealed class Scanner {
+    private const char TERMINATOR = '\0';
+
     private readonly Source source;
     private readonly DiagnosticList diagnostics;
     private readonly string sourceText;
 
-    private int start = 0;
-    private int current = 0;
+    private int startIndex = 0;
+    private int currentIndex = 0;
 
     private Scanner(Source source, DiagnosticList diagnostics) {
         this.source = source;
@@ -20,39 +22,51 @@ public sealed class Scanner {
     // Utilities //
     ///////////////
 
-    string CurrentLexeme => sourceText[start..current];
-    SourceRange CurrentLocation => new(source, start, current);
+    string CurrentLexeme => sourceText[startIndex..currentIndex];
+    SourceRange CurrentLocation => new(source, startIndex, currentIndex);
 
-    bool IsValid(int index) {
-        return 0 <= index && index < sourceText.Length;
+    Token CreateToken(TokenKind kind) {
+        return new(kind, CurrentLocation);
     }
 
-    bool IsAtEnd => !IsValid(current);
-
-    char Peek(int offset = 0) {
-        var index = current + offset;
-        return IsValid(index) ? sourceText[index] : '\0';
+    Token? CreateError(string message) {
+        diagnostics.AddError(CurrentLocation, message);
+        return null;
     }
 
-    char Advance() {
-        return sourceText[current++];
+    char Advance() => sourceText[currentIndex++];
+
+    char Peek(int offset) {
+        var index = currentIndex + offset;
+        if (0 <= index && index < sourceText.Length) {
+            return sourceText[index];
+        } else {
+            return TERMINATOR;
+        }
     }
+
+    char Previous => Peek(-1);
+    char Current => Peek(0);
+    char Next => Peek(1);
+
+    bool IsAtEnd => Current is TERMINATOR;
 
     void AdvanceWhile(Func<char, bool> predicate) {
-        while (predicate(Peek())) {
+        Requires(predicate(TERMINATOR) is false, "predicate must return false for terminator");
+        while (predicate(Current)) {
             Advance();
         }
     }
 
     void AdvanceUntil(char c) {
-        while (Peek() != c && IsValid(current)) {
+        Requires(c is not TERMINATOR, "cannot advance to terminator");
+        while (!(Current == c || IsAtEnd)) {
             Advance();
         }
     }
 
     bool Match(char c) {
-        Requires(c != '\0');
-        if (Peek() == c) {
+        if (Current == c) {
             Advance();
             return true;
         } else {
@@ -60,23 +74,17 @@ public sealed class Scanner {
         }
     }
 
-    Token CreateToken(TokenKind kind) {
-        return new Token(kind, CurrentLocation);
-    }
-
-    static bool IsAsciiDigit(char c) => (
-        '0' <= c && c <= '9'
+    static bool IsAsciiDigit(char c) => (c is
+        >= '0' and <= '9'
     );
 
-    static bool IsAsciiAlpha(char c) => (
-        'A' <= c && c <= 'Z' ||
-        'a' <= c && c <= 'z' ||
-        c == '_'
+    static bool IsAsciiAlpha(char c) => (c is
+        >= 'A' and <= 'Z' or
+        >= 'a' and <= 'z' or
+        '_' or '$'
     );
 
-    static bool IsAsciiAlphaNum(char c) {
-        return IsAsciiDigit(c) || IsAsciiAlpha(c);
-    }
+    static bool IsAsciiAlphaNum(char c) => IsAsciiDigit(c) || IsAsciiAlpha(c);
 
     static readonly Dictionary<string, TokenKind> keywords = [];
     static Scanner() {
@@ -93,7 +101,7 @@ public sealed class Scanner {
 
     Token? ContinueNumber() {
         AdvanceWhile(IsAsciiDigit);
-        if (Peek(0) == '.' && IsAsciiDigit(Peek(1))) {
+        if (Current == '.' && IsAsciiDigit(Next)) {
             Advance();
             AdvanceWhile(IsAsciiDigit);
         }
@@ -102,12 +110,11 @@ public sealed class Scanner {
 
     Token? ContinueString() {
         AdvanceUntil('"');
-        if (IsAtEnd) {
-            diagnostics.AddError(CurrentLocation, "unterminated string");
-            return null;
-        } else {
+        if (!IsAtEnd) {
             Advance();
             return CreateToken(STRING);
+        } else {
+            return CreateError("unterminated string");
         }
     }
 
@@ -117,6 +124,7 @@ public sealed class Scanner {
     }
 
     Token? ScanToken() {
+        startIndex = currentIndex;
         var c = Advance();
         switch (c) {
             // Whitespace
@@ -166,6 +174,7 @@ public sealed class Scanner {
             case '/':
                 if (Match('/')) {
                     AdvanceUntil('\n');
+                    Advance();
                     return null;
                 } else {
                     return CreateToken(SLASH);
@@ -178,10 +187,14 @@ public sealed class Scanner {
                     return ContinueNumber();
                 } else if (IsAsciiAlpha(c)) {
                     return ContinueIdentifierOrKeyword();
+                } else if (char.IsHighSurrogate(c) && char.IsLowSurrogate(Current)) {
+                    var hi = c;
+                    var lo = Advance();
+                    var codepoint = char.ConvertToUtf32(hi, lo);
+                    return CreateError($"unexpected character '{hi}{lo}' (U+{codepoint:X5})");
                 } else {
-                    // TODO: check for surrogates
-                    diagnostics.AddError(CurrentLocation, $"unexpected character '{c}' (U+{(ushort)c:X4})");
-                    return null;
+                    var codepoint = (ushort)c;
+                    return CreateError($"unexpected character '{c}' (U+{codepoint:X4})");
                 }
             }
         }
@@ -189,12 +202,11 @@ public sealed class Scanner {
 
     List<Token> ScanAllTokens() {
         var tokens = new List<Token>();
-        while (IsValid(current)) {
+        while (!IsAtEnd) {
             var item = ScanToken();
             tokens.AddNotNull(item);
-            start = current;
         }
-        tokens.Add(CreateToken(EOF));
+        tokens.Add(CreateToken(EOF)); // TODO: Remove silly EOF token
         return tokens;
     }
 

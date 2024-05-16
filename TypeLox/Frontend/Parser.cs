@@ -38,20 +38,15 @@ public sealed class Parser {
     // Beginning to feel that that EOF token is more trouble that it is worth
     bool IsAtEnd => !IsValid(current);
 
-    Token Advance() {
-        return tokens[current++];
-    }
+    Token Advance() => tokens[current++];
 
-    Token Peek(int offset = 0) {
-        var index = current + offset;
-        Assert(IsValid(index), "peek out of bounds");
-        return tokens[index];
-    }
+    Token Peek(int offset) => tokens[current + offset];
 
-    Token Previous() => Peek(-1);
+    Token Previous => Peek(-1);
+    Token Current => Peek(0);
 
     Token Consume(TokenKind kind, string description) {
-        var actual = Peek().Kind;
+        var actual = Current.Kind;
         if (actual == kind) {
             return Advance();
         } else {
@@ -61,14 +56,14 @@ public sealed class Parser {
 
     bool Check(TokenKind kind) {
         if (IsValid(current)) {
-            return Peek().Kind == kind;
+            return Current.Kind == kind;
         } else {
             return false;
         }
     }
 
     bool Match(TokenKind kind) {
-        if (Peek().Kind == kind) {
+        if (Current.Kind == kind) {
             Advance();
             return true;
         } else {
@@ -90,7 +85,7 @@ public sealed class Parser {
     }
 
     Recovery Error(string message, SourceRange? location = null) {
-        diagnostics.AddError(location ?? Peek().Location, message);
+        diagnostics.AddError(location ?? Current.Location, message);
         return Recovery.Instance;
     }
 
@@ -109,9 +104,9 @@ public sealed class Parser {
 
     void Synchronize() {
         while (!IsAtEnd) {
-            if (CanSynchronizeBefore(Peek().Kind)) { return; }
+            if (CanSynchronizeBefore(Current.Kind)) { return; }
             Advance();
-            if (CanSynchronizeAfter(Previous().Kind)) { return; }
+            if (CanSynchronizeAfter(Previous.Kind)) { return; }
         }
     }
 
@@ -122,7 +117,7 @@ public sealed class Parser {
     Expr Assignment() {
         var lhs = Or();
         if (Match(EQUAL)) { // TODO: This is where := would go
-            var op = Previous();
+            var op = Previous;
             var rhs = Assignment(); // recursion!
 
             if (lhs is Expr.Variable variable) {
@@ -139,7 +134,7 @@ public sealed class Parser {
     Expr Or() {
         var lhs = And();
         while (Match(OR)) {
-            var op = Previous();
+            var op = Previous;
             var rhs = And();
             lhs = new Expr.Logical(lhs, op, rhs);
         }
@@ -149,7 +144,7 @@ public sealed class Parser {
     Expr And() {
         var lhs = Equality();
         while (Match(AND)) {
-            var op = Previous();
+            var op = Previous;
             var rhs = Equality();
             lhs = new Expr.Logical(lhs, op, rhs);
         }
@@ -159,7 +154,7 @@ public sealed class Parser {
     Expr Equality() {
         var lhs = Comparison();
         while (MatchAny(BANG_EQUAL, EQUAL_EQUAL)) {
-            var op = Previous();
+            var op = Previous;
             var rhs = Comparison();
             lhs = new Expr.Binary(lhs, op, rhs);
         }
@@ -169,7 +164,7 @@ public sealed class Parser {
     Expr Comparison() {
         var lhs = Term();
         while (MatchAny(LESS, LESS_EQUAL, GREATER, GREATER_EQUAL)) {
-            var op = Previous();
+            var op = Previous;
             var rhs = Term();
             lhs = new Expr.Binary(lhs, op, rhs);
         }
@@ -179,7 +174,7 @@ public sealed class Parser {
     Expr Term() {
         var lhs = Factor();
         while (MatchAny(PLUS, MINUS)) {
-            var op = Previous();
+            var op = Previous;
             var rhs = Factor();
             lhs = new Expr.Binary(lhs, op, rhs);
         }
@@ -189,7 +184,7 @@ public sealed class Parser {
     Expr Factor() {
         var lhs = Unary();
         while (MatchAny(STAR, SLASH)) {
-            var op = Previous();
+            var op = Previous;
             var rhs = Unary();
             lhs = new Expr.Binary(lhs, op, rhs);
         }
@@ -198,7 +193,7 @@ public sealed class Parser {
 
     Expr Unary() {
         if (MatchAny(BANG, MINUS)) {
-            var op = Previous();
+            var op = Previous;
             var rhs = Unary();
             return new Expr.Unary(op, rhs);
         }
@@ -206,7 +201,7 @@ public sealed class Parser {
     }
 
     Expr.Call FinishCallExpr(Expr expr) {
-        var opening = Previous();
+        var opening = Previous;
         var args = new List<Expr>();
         if (!Check(RIGHT_PAREN)) {
             do {
@@ -234,7 +229,7 @@ public sealed class Parser {
     }
 
     Expr.Super SuperExpression() {
-        var keyword = Previous();
+        var keyword = Previous;
         Consume(DOT, "'.' after super");
         var method = Consume(IDENTIFIER, "name of super method");
         return new(keyword, method);
@@ -248,13 +243,13 @@ public sealed class Parser {
 
     Expr Primary() {
         if (MatchAny(NIL, FALSE, TRUE, NUMBER, STRING)) {
-            return Expr.Literal.FromToken(Previous());
+            return Expr.Literal.FromToken(Previous);
         } else if (Match(SUPER)) {
             return SuperExpression();
         } else if (Match(THIS)) {
-            return new Expr.This(Previous());
+            return new Expr.This(Previous);
         } else if (Match(IDENTIFIER)) {
-            return new Expr.Variable(Previous());
+            return new Expr.Variable(Previous);
         } else if (Match(LEFT_PAREN)) {
             return GroupingExpression();
         } else {
@@ -349,14 +344,14 @@ public sealed class Parser {
     }
 
     Stmt.Assert AssertStatement() {
-        var keyword = Previous();
+        var keyword = Previous;
         var value = Expression();
         Consume(SEMICOLON, "';' after inspected value");
         return new(keyword, value);
     }
 
     Stmt.Return ReturnStatement() {
-        var keyword = Previous();
+        var keyword = Previous;
         Expr? value = null;
         if (!Check(SEMICOLON)) {
             value = Expression();
@@ -441,7 +436,7 @@ public sealed class Parser {
         Expr.Variable? superclass = null;
         if (Match(LESS)) {
             Consume(IDENTIFIER, "superclass name");
-            superclass = new Expr.Variable(Previous());
+            superclass = new Expr.Variable(Previous);
         }
         Consume(LEFT_BRACE, "opening brace at the start of class body");
         var methods = new List<Stmt.Function>();
@@ -454,7 +449,6 @@ public sealed class Parser {
 
     Stmt? DeclarationOrStatement() {
         try {
-
             if (Match(CLASS)) {
                 return ClassDeclaration();
             } else if (Match(FUN)) {
@@ -476,7 +470,7 @@ public sealed class Parser {
     Stmt.Module ParseFile() {
         var statements = new List<Stmt>();
         try {
-            while (Peek().Kind != EOF) {
+            while (Current.Kind != EOF) {
                 statements.AddNotNull(DeclarationOrStatement());
             }
             Consume(EOF, "end of file");
