@@ -68,6 +68,7 @@ public static class AstNodePrinter {
         public Unit Visit(Expr.Variable node) => Wrap("var", node.Name);
 
         public Unit Visit(Stmt.Assert node) => Wrap("assert", node.Expr);
+        public Unit Visit(Stmt.AssertEqual node) => Wrap("assert_eq", node.Left, node.Right);
         public Unit Visit(Stmt.Block node) => Wrap("block", node.Statements);
         public Unit Visit(Stmt.Class node) => Wrap("class", node.Name, node.Superclass, node.Methods);
         public Unit Visit(Stmt.Expression node) => Wrap("expr", node.Expr);

@@ -101,28 +101,6 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         }
     }
 
-    string FormatAssertionFailureContext(Expr expr) {
-        var variables = expr.GetDescendants().OfType<Expr.Variable>().ToList();
-        if (variables.Count > 0) {
-            var context = new StringBuilder();
-            context.Append('(');
-            var isFirst = true;
-            foreach (var @var in variables) {
-                if (isFirst) { isFirst = false; } else {
-                    context.Append(", ");
-                }
-                context.Append(@var.Name.Lexeme);
-                context.Append(" == ");
-                context.Append(Visit(@var));
-                // ↑ variable lookup should never have a side effect
-            }
-            context.Append(')');
-            return context.ToString();
-        } else {
-            return "(no context)";
-        }
-    }
-
     /////////////////
     // Expressions //
     /////////////////
@@ -286,8 +264,17 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         var expr = node.Expr;
         var value = Evaluate(expr);
         if (!value.IsLoxTruthy()) {
+            throw new LoxRuntimeException(node.Keyword.Location, $"assertion failed");
+        }
+        return null;
+    }
+
+    public object? Visit(Stmt.AssertEqual node) {
+        var lhs = Evaluate(node.Left);
+        var rhs = Evaluate(node.Right);
+        if (!lhs.LoxEquals(rhs)) {
             throw new LoxRuntimeException(node.Keyword.Location,
-                $"assertion failed {FormatAssertionFailureContext(expr)}"
+                $"assertion failed: {lhs.ToLoxDebugString()} != {rhs.ToLoxDebugString()}"
             );
         }
         return null;

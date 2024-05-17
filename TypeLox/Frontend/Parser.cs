@@ -343,11 +343,14 @@ public sealed class Parser {
         return new Stmt.Print(value);
     }
 
-    Stmt.Assert AssertStatement() {
+    Stmt AssertStatement() {
         var keyword = Previous;
         var value = Expression();
         Consume(SEMICOLON, "';' after inspected value");
-        return new(keyword, value);
+        if (value is Expr.Binary binary && binary.Operator.Kind == EQUAL_EQUAL) {
+            return new Stmt.AssertEqual(keyword, binary.Left, binary.Right);
+        }
+        return new Stmt.Assert(keyword, value);
     }
 
     Stmt.Return ReturnStatement() {

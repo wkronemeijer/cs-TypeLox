@@ -181,6 +181,12 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
 
     public Unit Visit(Stmt.Assert node) => Resolve(node.Expr);
 
+    public Unit Visit(Stmt.AssertEqual node) {
+        Resolve(node.Left);
+        Resolve(node.Right);
+        return unit;
+    }
+
     public Unit Visit(Stmt.Print node) => Resolve(node.Expr);
 
     public Unit Visit(Stmt.Return node) {
