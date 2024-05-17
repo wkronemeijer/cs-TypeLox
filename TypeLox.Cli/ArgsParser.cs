@@ -105,14 +105,6 @@ public sealed class ArgsParser(string[] args) {
             HelpText = "Allow over- and under-application.",
         });
 
-        DefineFlag(new() {
-            Name = "UpgradeAssert",
-            Action = delegate {
-                options.CompilerOptions.TrackEvaluation = true;
-            },
-            HelpText = "Improve assertion failure messages.",
-        });
-
         ProcessArgs();
 
         switch (positionals) {
@@ -136,7 +128,6 @@ public sealed class ArgsParser(string[] args) {
 
         if (mode is ProgramMode.TestDirectory) {
             var compilerOptions = options.CompilerOptions;
-            compilerOptions.TrackEvaluation ??= true;
             compilerOptions.DisablePrint ??= true;
         }
 

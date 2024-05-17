@@ -8,10 +8,6 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     private readonly Env globalEnv = new();
     private Env currentEnv;
 
-    private readonly Dictionary<Expr, object?> valueByExpr = new(
-        ReferenceEqualityComparer.Instance
-    );
-
     public ICompilerHost Host { get; }
     public string Name => "treewalk";
 
@@ -81,19 +77,9 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     // Interpreting //
     //////////////////
 
-    public object? Evaluate(Expr expr) {
-        var value = expr.Accept(this);
-        if (options.TrackEvaluation is true) {
-            valueByExpr[expr] = value;
-        }
-        return value;
-    }
+    public object? Evaluate(Expr expr) => expr.Accept(this);
 
-    public void Execute(Stmt stmt) {
-        valueByExpr.Clear();
-        stmt.Accept(this);
-        // Clearing after would accumulate 
-    }
+    public void Execute(Stmt stmt) => stmt.Accept(this);
 
     public void ExecuteBlock(IEnumerable<Stmt> stmts, Env temporaryEnv) {
         var oldEnv = currentEnv;
@@ -115,25 +101,26 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         }
     }
 
-    string FindFailureReason(Expr expr) {
-        object? actual = valueByExpr[expr];
-        Requires(actual.IsLoxTruthy() is false);
-        object? expected = true;
-        if (
-            expr is Expr.Binary binary &&
-            binary.Operator.Kind is EQUAL_EQUAL
-        ) {
-            var left = binary.Left;
-            var right = binary.Right;
-            if (left is Expr.Literal) {
-                expected = valueByExpr[left];
-                actual = valueByExpr[right];
-            } else if (right is Expr.Literal) {
-                actual = valueByExpr[left];
-                expected = valueByExpr[right];
+    string FormatAssertionFailureContext(Expr expr) {
+        var variables = expr.GetDescendants().OfType<Expr.Variable>().ToList();
+        if (variables.Count > 0) {
+            var context = new StringBuilder();
+            context.Append('(');
+            var isFirst = true;
+            foreach (var @var in variables) {
+                if (isFirst) { isFirst = false; } else {
+                    context.Append(", ");
+                }
+                context.Append(@var.Name.Lexeme);
+                context.Append(" == ");
+                context.Append(Visit(@var));
+                // ↑ variable lookup should never have a side effect
             }
+            context.Append(')');
+            return context.ToString();
+        } else {
+            return "(no context)";
         }
-        return $"received {actual.ToLoxDebugString()}, expected {expected.ToLoxDebugString()}";
     }
 
     /////////////////
@@ -300,7 +287,7 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
         var value = Evaluate(expr);
         if (!value.IsLoxTruthy()) {
             throw new LoxRuntimeException(node.Keyword.Location,
-                $"assertion failed: {FindFailureReason(expr)}"
+                $"assertion failed {FormatAssertionFailureContext(expr)}"
             );
         }
         return null;

@@ -241,3 +241,6 @@ dotnet_diagnostic.IDE2002.severity = warning
 # unnecessary parentheses
 dotnet_diagnostic.IDE0047.severity = none
 dotnet_diagnostic.IDE0048.severity = none
+
+# collection (.ToList() reads nicer)
+dotnet_diagnostic.IDE0305.severity = none
