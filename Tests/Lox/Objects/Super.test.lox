@@ -1,0 +1,13 @@
+class Base {
+    depth() {
+        return 1;
+    }
+}
+
+class Derived < Base {
+    depth() {
+        return super.depth() + 1;
+    }
+}
+
+assert Derived().depth() == 2;

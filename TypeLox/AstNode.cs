@@ -100,6 +100,8 @@ public abstract record class Stmt() : AstNode {
     }
 
     public record class Class(Token Name, Expr.Variable? Superclass, List<Function> Methods) : Stmt {
+        public ClassKind Kind = Superclass is null ? ClassKind.Class : ClassKind.SubClass;
+
         public override R Accept<R>(IVisitor<R> visitor) => visitor.Visit(this);
     }
 

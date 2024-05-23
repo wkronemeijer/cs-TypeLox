@@ -7,4 +7,5 @@ global using System.Text;
 global using Core;
 
 global using static Core.Contractual;
+global using static Core.Replacement;
 global using static Core.Unit;

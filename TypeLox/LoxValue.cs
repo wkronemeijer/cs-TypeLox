@@ -23,6 +23,7 @@ public static class LoxValueObjectExtensions {
         LoxClass => true,
         LoxFunction => true,
         LoxInstance => true,
+        ILoxCallable => true,
         _ => false,
     };
 
@@ -48,7 +49,7 @@ public static class LoxValueObjectExtensions {
         string => "string",
         LoxClass => "class",
         LoxInstance => "object",
-        LoxFunction => "function",
+        LoxFunction or ILoxCallable => "function",
         _ => throw InvalidValue(value),
     };
 
@@ -60,6 +61,7 @@ public static class LoxValueObjectExtensions {
         LoxClass c => $"<class {c.Name}>",
         LoxInstance i => $"<instance {i.Class.Name}>",
         LoxFunction c => $"<fn {c.Name}>",
+        ILoxCallable c => $"<fn {c.Name}>",
         _ => throw InvalidValue(value),
     };
 

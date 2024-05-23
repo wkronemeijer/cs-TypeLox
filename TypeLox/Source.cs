@@ -14,4 +14,12 @@ public record class Source(Uri Uri, string Code, bool CameFromRepl = false) {
         var uri = new Uri($"lox:/snippet/{code.GetHashCode():x8}");
         return new Source(uri, code);
     }
+
+    private SourceRange Slice(Range range) {
+        var start = range.Start.GetOffset(Code.Length);
+        var end = range.End.GetOffset(Code.Length);
+        return new(this, start, end);
+    }
+
+    public SourceRange this[Range range] => Slice(range);
 }

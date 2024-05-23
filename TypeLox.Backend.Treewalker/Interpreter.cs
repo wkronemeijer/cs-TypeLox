@@ -82,14 +82,10 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     public void Execute(Stmt stmt) => stmt.Accept(this);
 
     public void ExecuteBlock(IEnumerable<Stmt> stmts, Env temporaryEnv) {
-        var oldEnv = currentEnv;
-        try {
-            currentEnv = temporaryEnv;
+        using (ReplaceUsing(ref currentEnv, temporaryEnv)) {
             foreach (var stmt in stmts) {
                 Execute(stmt);
             }
-        } finally {
-            currentEnv = oldEnv;
         }
     }
 
@@ -190,13 +186,14 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
 
     public object? Visit(Expr.Call node) {
         var callee = Evaluate(node.Callee);
-        // Does Select always evaluate in sequence?
         var arguments = node.Arguments.Select(Evaluate).ToList();
         var location = node.Paren.Location;
         if (callee is ILoxCallable callable) {
             return callable.Call(this, location, arguments);
         } else {
-            throw new LoxRuntimeException(location, $"{callee?.GetType()} is not callable");
+            throw new LoxRuntimeException(location,
+                $"{callee?.GetType()} is not callable"
+            );
         }
     }
 
@@ -205,7 +202,7 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     public object? Visit(Expr.Super node) {
         if (locals.GetDepth(node) is int distance) {
             var rawSuper = currentEnv.GetAt("super", distance);
-            var rawInstance = currentEnv.GetAt("this", distance);
+            var rawInstance = currentEnv.GetAt("this", distance - 1);
 
             if (rawSuper is LoxClass super) {
                 if (super.FindMethod(node.Name.Lexeme) is LoxFunction method) {
@@ -332,54 +329,40 @@ public class Interpreter : IInterpreter, AstNode.IVisitor<object?> {
     }
 
     public object? Visit(Stmt.Class node) {
-        var name = node.Name.Lexeme;
-
         LoxClass? super = null;
         if (node.Superclass is not null) {
-            if (Evaluate(node.Superclass) is LoxClass c) {
+            var value = Evaluate(node.Superclass);
+            if (value is LoxClass c) {
                 super = c;
             } else {
                 throw new LoxRuntimeException(node.Superclass.Name.Location,
-                    $"cannot extend a non-class"
+                    $"cannot extend non-class {value.ToLoxDebugString()}"
                 );
             }
         }
 
-        currentEnv.Define(name, null);
-        // TODO: Create env for super
-        var oldEnv = currentEnv;
+        currentEnv.Define(node.Name, null);
 
         List<LoxFunction> methodList = [];
         LoxFunction? initializer = null;
-        try {
-            currentEnv = new Env(currentEnv);
-            {
-                if (super is not null) {
-                    currentEnv.Define(super.Name, super);
-                }
+        using (ReplaceUsing(ref currentEnv, new Env(currentEnv))) {
+            if (super is not null) {
+                currentEnv.Define("super", super);
+            }
 
-                foreach (var decl in node.Methods) {
-                    var method = new LoxFunction(decl, currentEnv);
-                    if (method.Kind is FunctionKind.Initializer) {
-                        initializer = method;
-                    } else {
-                        methodList.Add(method);
-                    }
+            foreach (var decl in node.Methods) {
+                var method = new LoxFunction(decl, currentEnv);
+                if (method.Kind is FunctionKind.Initializer) {
+                    initializer = method;
+                } else {
+                    methodList.Add(method);
                 }
             }
-        } finally {
-            currentEnv = oldEnv;
         }
 
-        var methodDict = (
-            methodList
-            .ToDictionary(
-                method => method.Name,
-                method => method
-            )
-        );
+        var methodDict = methodList.Select(method => (method.Name, method)).ToDictionary();
 
-        currentEnv.Assign(node.Name, new LoxClass(name, super, initializer, methodDict));
+        currentEnv.Assign(node.Name, new LoxClass(node.Name, super, initializer, methodDict));
         return null;
     }
 

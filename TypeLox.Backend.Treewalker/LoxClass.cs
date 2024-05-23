@@ -3,12 +3,12 @@ namespace TypeLox.Backend.Treewalker;
 using System.Collections.Generic;
 
 public sealed class LoxClass(
-    string name,
+    Token name,
     LoxClass? super,
     LoxFunction? initializer,
     Dictionary<string, LoxFunction> methods
 ) : ILoxCallable {
-    public string Name { get; } = name;
+    public string Name { get; } = name.Lexeme;
     public LoxClass? SuperClass { get; } = super;
 
     public LoxFunction? FindMethod(string name) {

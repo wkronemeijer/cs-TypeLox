@@ -3,7 +3,7 @@ namespace TypeLox.Backend.Treewalker;
 // We call it env because System.Environment is already a thing
 // No interface because this thing has to be fast
 
-public sealed class Env(Env? parent) {
+public sealed class Env(Env? parent) : IDisplay {
     public Env() : this(null) { }
 
     public Env? Parent => parent;
@@ -55,12 +55,34 @@ public sealed class Env(Env? parent) {
     }
 
     public object? GetAt(string name, int depth) {
-        return GetAncestor(depth).values[name];
+        if (GetAncestor(depth).values.TryGetValue(name, out var result)) {
+            return result;
+        } else {
+            throw new Exception($"could not find '{name}' at depth {depth}");
+        }
     }
 
     public object? GetAt(Token name, int depth) => GetAt(name.Lexeme, depth);
 
     public void AssignAt(Token name, int depth, object? value) {
         GetAncestor(depth).values[name.Lexeme] = value;
+    }
+
+    public void Format(IFormatter f) {
+        var oldIndent = f.CurrentIndentation;
+        var depth = 0;
+        for (Env? cursor = this; cursor is not null; cursor = cursor.Parent, depth++) {
+            f.AppendLine($"depth {depth}:");
+            f.Indent();
+            foreach (var (key, value) in cursor.values) {
+                f.Append(key.ToLoxDebugString());
+                f.Append(" --> ");
+                f.Append(value.ToLoxDebugString());
+                f.AppendLine();
+            }
+            f.AppendLine();
+        }
+
+        f.CurrentIndentation = oldIndent;
     }
 }

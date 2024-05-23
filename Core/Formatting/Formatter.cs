@@ -7,8 +7,11 @@ public interface IFormatter {
 
     void Append(char c);
     void Append(string s);
+
     void Indent();
     void Dedent();
+
+    int CurrentIndentation { get; set; }
 
     ////////////////
     // Extensions //
@@ -77,6 +80,15 @@ public sealed class Formatter(string indent) : IFormatter {
         if (s.Contains(newline)) {
             primed = true;
         }
+    }
+
+    public int CurrentIndentation {
+        get => level;
+        set => level = value >= 0 ? value : throw new ArgumentOutOfRangeException(
+            nameof(value),
+            value,
+            "parameter must be non-negative"
+        );
     }
 
     public void Indent() {

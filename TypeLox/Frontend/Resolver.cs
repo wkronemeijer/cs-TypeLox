@@ -16,16 +16,6 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
         this.diagnostics = diagnostics;
     }
 
-    // TODO: Maybe put this in Core
-    /// <summary>
-    /// Assigns the value to the reference, and then returns the <b>old</b> value.
-    /// </summary>
-    public static T Replace<T>(ref T current, T newValue) {
-        var oldValue = current;
-        current = newValue;
-        return oldValue;
-    }
-
     ///////////////
     // Utitities //
     ///////////////
@@ -90,8 +80,7 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
     }
 
     void ResolveFunction(Stmt.Function node) {
-        var old = Replace(ref currentFunction, node.Kind);
-        {
+        using (ReplaceUsing(ref currentFunction, node.Kind)) {
             BeginScope();
             {
                 foreach (var param in node.Parameters) {
@@ -102,7 +91,6 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
             }
             EndScope();
         }
-        currentFunction = old;
     }
 
     ////////////////
@@ -162,13 +150,21 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
     }
 
     public Unit Visit(Expr.Super node) {
-        throw new NotImplementedException();
+        if (currentClass is null) {
+            diagnostics.AddError(node.Keyword.Location,
+                $"cannot access 'super' outside of methods"
+            );
+            // TODO: Allow this to be global?
+            // Then again, globalThis has caused no amount of pain
+        }
+        ResolveLocal(node, node.Keyword);
+        return unit;
     }
 
     public Unit Visit(Expr.This node) {
         if (currentClass is null) {
             diagnostics.AddError(node.Keyword.Location,
-                $"cannot access this outside of methods"
+                $"cannot access 'this' outside of methods"
             );
             // TODO: Allow this to be global?
             // Then again, globalThis has caused no amount of pain
@@ -240,26 +236,26 @@ public sealed class Resolver : AstNode.IVisitor<Unit> {
     }
 
     public Unit Visit(Stmt.Class node) {
-        var kind = (node.Superclass is null ?
-            ClassKind.Class :
-            ClassKind.SubClass
-        );
-        var old = Replace(ref currentClass, kind);
-        {
+        using (ReplaceUsing(ref currentClass, node.Kind)) {
             Declare(node.Name);
+            Define(node.Name);
+            if (node.Superclass is not null) {
+                Resolve(node.Superclass);
+            }
             BeginScope();
             {
                 scopes.Peek()["super"] = VariableState.Defined;
-                scopes.Peek()["this"] = VariableState.Defined;
-
-                foreach (var stmt in node.Methods) {
-                    ResolveFunction(stmt);
+                BeginScope();
+                {
+                    scopes.Peek()["this"] = VariableState.Defined;
+                    foreach (var stmt in node.Methods) {
+                        ResolveFunction(stmt);
+                    }
                 }
+                EndScope();
             }
             EndScope();
-            Define(node.Name);
         }
-        currentClass = old;
         return unit;
     }
 
