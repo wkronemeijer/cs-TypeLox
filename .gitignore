@@ -1,9 +1,12 @@
+# C# output
 [Bb]in
 [Oo]bj
 
+# Rust output
+[Tt]arget
+
 # This symlinks to the test folder inside crafting interpreters
 /Tests/Baseline
-
 
 # Scratchpad file
 /*.lox 

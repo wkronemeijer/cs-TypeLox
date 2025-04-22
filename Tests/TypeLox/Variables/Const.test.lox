@@ -1,0 +1,17 @@
+
+// generates a warning 
+const a;
+assert a == nil;
+
+const b = 10;
+assert b == nil;
+
+fun accessB() {
+    print b;
+}
+
+assert !pcall(accessB);
+
+const c;
+c = 10;
+assert c;

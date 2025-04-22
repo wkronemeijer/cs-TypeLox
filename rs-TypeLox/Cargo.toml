@@ -1,0 +1,7 @@
+[package]
+name = "typelox"
+
+[profile.dev]
+opt-level = 1
+
+[dependencies]

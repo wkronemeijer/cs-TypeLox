@@ -18,9 +18,9 @@ fun test(n) {
 // test(10);
 // test(15);
 // test(20);
-// test(25);
+test(25);
 // test(30);
-test(35);
+// test(35);
 
 // Sample:
 //     start fib(35)

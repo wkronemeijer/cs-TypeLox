@@ -1,0 +1,12 @@
+// defaults to nil
+var c; 
+assert c == nil;
+
+// can be initialization
+var b = 10;
+assert b == 10;
+
+// can be re-assigned
+var a;
+a = 10;
+assert a == 10;
