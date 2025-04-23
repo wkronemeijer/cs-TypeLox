@@ -9,4 +9,5 @@
 /Tests/Baseline
 
 # Scratchpad file
-/*.lox 
+/**/Scratch.lox 
+/**/Scratch.test.lox 
